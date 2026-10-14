@@ -3,8 +3,8 @@ name: Deploy Laravel to CloudPanel
 on:
   push:
     branches:
-      - main  # অথবা আপনার ডিফল্ট ব্রাঞ্চের নাম (যেমন: master)
-  workflow_dispatch: # এটি রাখার কারণে GitHub Actions ট্যাব থেকে ম্যানুয়ালি "Run workflow" বাটনে ক্লিক করে ডিপ্লয় করতে পারবেন
+      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -16,35 +16,16 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
+          port: ${{ secrets.SSH_PORT }}
           script_stop: true
           script: |
-            # ১. প্রোজেক্ট ডিরেক্টরিতে যান
-            cd /home/${{ secrets.SSH_USER }}/htdocs/dolna.armetalbd.com
-
-            # ২. মেইনটেইনেন্স মোড অন (খুব অল্প সময়ের জন্য যাতে ভিজিটর কোনো এরর না দেখে)
-            php artisan down || true
-
-            # ৩. গিট থেকে লেটেস্ট কোড পুল
+            cd /home/armetalbd-dolna/htdocs/dolna.armetalbd.com
+            git config --global --add safe.directory /home/armetalbd-dolna/htdocs/dolna.armetalbd.com
             git reset --hard HEAD
             git pull origin main
-
-            # ৪. নো-ডেভ অপটিমাইজড কম্পোজার ইনস্টল (ফাস্ট প্রসেস)
             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-
-            # ৫. ডেটাবেজ মাইগ্রেশন (যদি ল্যান্ডিং পেজে লিড/ডাটা থাকে)
-            php artisan migrate --force
-
-            # ৬. ক্যাশ অপটিমাইজেশন (ল্যান্ডিং পেজ সুপার ফাস্ট লোড হওয়ার জন্য)
             php artisan optimize:clear
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
-
-            # ৭. স্টোরেজ লিংক নিশ্চিত করা
-            php artisan storage:link || true
-
-            # ৮. সাইট লাইভ করা
-            php artisan up
-
-            echo "🚀 Deployment completed successfully!"
+            chown -R armetalbd-dolna:armetalbd-dolna /home/armetalbd-dolna/htdocs/dolna.armetalbd.com
