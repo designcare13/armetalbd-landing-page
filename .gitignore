@@ -30,3 +30,6 @@ Thumbs.db
 
 # Database dumps (contain admin password hash, sessions, settings)
 *.sql
+
+# Local tooling
+/.claude/settings.local.json
