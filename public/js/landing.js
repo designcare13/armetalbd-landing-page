@@ -10,6 +10,7 @@ window.ArmTracking = window.ArmTracking || {
   fbp: () => '',
   fbc: () => '',
   track: () => {},
+  trackCustom: () => {},
 };
 
 let cart = [];
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderProducts('all');
   updateOrderSummary();
   initFaqAccordion();
+  initVideoSection();
   initIncompleteOrderCapture();
   initCheckoutTracking();
 
@@ -549,6 +551,26 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') closeModal('quickViewModal');
 });
 // FAQ Accordion
+// The video player is loaded only when the visitor taps the cover, so it never slows the page down.
+function initVideoSection() {
+  const frame = document.getElementById('videoFrame');
+  const poster = frame ? frame.querySelector('.video-poster') : null;
+  if (!frame || !poster) return;
+
+  poster.addEventListener('click', () => {
+    const title = frame.dataset.videoTitle || 'Video';
+    const player = document.createElement('iframe');
+    player.src = frame.dataset.embedUrl;
+    player.title = title;
+    player.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    player.referrerPolicy = 'strict-origin-when-cross-origin';
+    player.allowFullscreen = true;
+
+    frame.replaceChildren(player);
+    ArmTracking.trackCustom('VideoPlay', { content_name: title, video_provider: 'youtube' }, 'video_start');
+  }, { once: true });
+}
+
 function initFaqAccordion() {
   document.querySelectorAll('.faq-header').forEach(header => {
     header.addEventListener('click', () => {

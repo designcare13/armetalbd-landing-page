@@ -6,7 +6,7 @@
    */
   $anchor = $anchor ?? '';
   $orderUrl = $orderUrl ?? $anchor.'#checkoutSection';
-  $brandParts = preg_split('/\s+/', trim($settings['brand_name']), 2);
+  $brandParts = preg_split('/\s+/u', trim($settings['brand_name']), 2);
 @endphp
   <!-- Top Announcement Bar -->
   <aside class="top-bar" aria-label="Announcement">

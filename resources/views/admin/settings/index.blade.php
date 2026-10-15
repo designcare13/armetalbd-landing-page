@@ -80,7 +80,7 @@
                 @php $current = \App\Models\Setting::imageUrl($settings[$key]); @endphp
                 <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
                   <img src="{{ $current }}" alt="{{ $field['label'] }}" id="preview_{{ $key }}"
-                       style="width: 96px; height: 96px; object-fit: contain; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px;">
+                       style="width: 96px; height: 96px; object-fit: contain; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px;{{ $current ? '' : ' display: none;' }}">
                   <div>
                     <input type="file" name="{{ $key }}" id="{{ $key }}" class="form-control" accept="image/jpeg,image/png,image/webp,.ico"
                            onchange="previewImage(this, 'preview_{{ $key }}')">
@@ -156,7 +156,9 @@
     if (!file) { return; }
     if (!/^image\//.test(file.type)) { alert('শুধু ছবি ফাইল সিলেক্ট করুন।'); input.value = ''; return; }
     if (file.size > 2 * 1024 * 1024) { alert('ছবির সাইজ ২ MB এর বেশি হতে পারবে না।'); input.value = ''; return; }
-    document.getElementById(previewId).src = URL.createObjectURL(file);
+    var preview = document.getElementById(previewId);
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = '';
   }
 </script>
 

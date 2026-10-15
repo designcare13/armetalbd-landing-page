@@ -1,5 +1,7 @@
 <?php
 
+use App\Support\Video;
+
 /*
 |--------------------------------------------------------------------------
 | Landing page content schema
@@ -21,7 +23,7 @@ return [
     'tabs' => [
         'general' => ['label' => 'ব্র্যান্ড ও যোগাযোগ', 'icon' => 'fa-solid fa-id-card', 'groups' => ['brand', 'contact', 'delivery']],
         'hero' => ['label' => 'হিরো ও টপ বার', 'icon' => 'fa-solid fa-star', 'groups' => ['topbar', 'hero']],
-        'sections' => ['label' => 'ট্রাস্ট ও প্রোডাক্ট সেকশন', 'icon' => 'fa-solid fa-layer-group', 'groups' => ['trust', 'products_section', 'spotlight', 'checkout_section']],
+        'sections' => ['label' => 'ট্রাস্ট ও প্রোডাক্ট সেকশন', 'icon' => 'fa-solid fa-layer-group', 'groups' => ['trust', 'products_section', 'spotlight', 'video_section', 'checkout_section']],
         'footer' => ['label' => 'রিভিউ, FAQ ও ফুটার', 'icon' => 'fa-solid fa-comments', 'groups' => ['reviews_section', 'faq_section', 'footer']],
         'seo' => ['label' => 'SEO ও পিক্সেল', 'icon' => 'fa-solid fa-magnifying-glass-chart', 'groups' => ['seo']],
     ],
@@ -154,6 +156,24 @@ return [
                 'spotlight_3_desc' => ['label' => 'ফিচার ৩ - বিবরণ', 'type' => 'text', 'default' => 'বসার আরামদায়ক অনুভূতির জন্য সাথে পাচ্ছেন উন্নত মানের সফট কুশন সেট।', 'rules' => 'nullable|string|max:200'],
                 'spotlight_4_title' => ['label' => 'ফিচার ৪ - শিরোনাম', 'type' => 'text', 'default' => 'সহজ ইনস্টলেশন', 'rules' => 'nullable|string|max:80'],
                 'spotlight_4_desc' => ['label' => 'ফিচার ৪ - বিবরণ', 'type' => 'text', 'default' => 'যেকোনো সাধারণ মানুষ মাত্র ৫ মিনিটে নিজেই ফিটিং করতে পারবেন।', 'rules' => 'nullable|string|max:200'],
+            ],
+        ],
+
+        'video_section' => [
+            'title' => 'ভিডিও সেকশন (অর্ডার ফর্মের ঠিক উপরে)',
+            'icon' => 'fa-solid fa-circle-play',
+            'fields' => [
+                'video_url' => ['label' => 'ইউটিউব ভিডিওর লিংক', 'type' => 'text', 'default' => 'https://www.youtube.com/watch?v=BqT6m1pDlmo', 'rules' => ['nullable', 'url:http,https', 'max:300', 'regex:'.Video::YOUTUBE_PATTERN], 'hint' => 'ইউটিউব থেকে ভিডিওর লিংক কপি করে এখানে পেস্ট করুন (youtube.com বা youtu.be)। খালি রাখলে এই সেকশন ওয়েবসাইটে দেখানো হবে না।'],
+                'video_pill' => ['label' => 'ছোট ব্যাজ', 'type' => 'text', 'default' => 'প্রোডাক্ট ডেমো ভিডিও', 'rules' => 'nullable|string|max:80'],
+                'video_title' => ['label' => 'শিরোনাম', 'type' => 'text', 'default' => 'ভিডিওতে দেখুন প্রোডাক্টের আসল মান', 'rules' => 'nullable|string|max:200'],
+                'video_desc' => ['label' => 'বিবরণ', 'type' => 'textarea', 'default' => 'নিজের চোখে দেখে নিন আমাদের প্রোডাক্টের গঠন, ফিনিশিং ও মজবুতি। তারপর নিশ্চিন্তে অর্ডার করুন।', 'rules' => 'nullable|string|max:500'],
+                'video_thumb' => [
+                    'label' => 'ভিডিওর কভার ছবি (ঐচ্ছিক)', 'type' => 'image',
+                    'default' => '',
+                    'rules' => $imageRules.'|dimensions:min_width=300,min_height=170,max_width=5000,max_height=5000',
+                    'hint' => 'JPG, PNG বা WEBP • সর্বোচ্চ ২ MB • চওড়া (১৬:৯) ছবি ভালো। খালি রাখলে ইউটিউবের নিজস্ব ছবি দেখাবে।',
+                ],
+                'video_upload_date' => ['label' => 'ভিডিও আপলোডের তারিখ (গুগলের জন্য)', 'type' => 'text', 'default' => '2025-09-13', 'rules' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'], 'hint' => 'বছর-মাস-দিন ফরম্যাটে, যেমন 2025-09-13। ভিডিও বদলালে এই তারিখও বদলান। খালি রাখলে গুগলকে ভিডিওর তথ্য জানানো হবে না।'],
             ],
         ],
 

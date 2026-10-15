@@ -27,7 +27,7 @@
 </head>
 <body>
 @php
-  $lines = fn ($text) => array_values(array_filter(array_map('trim', preg_split('/\R/', (string) $text))));
+  $lines = fn ($text) => array_values(array_filter(array_map('trim', preg_split('/\R/u', (string) $text) ?: [(string) $text])));
   $img = fn ($key) => \App\Models\Setting::imageUrl($settings[$key]);
 
 @endphp
@@ -183,6 +183,42 @@
         </div>
       </div>
     </section>
+
+    <!-- Product demo video, right above the order form -->
+    @php
+      $videoId = \App\Support\Video::youtubeId($settings['video_url'] ?? '');
+      $videoCover = $img('video_thumb') ?: ($videoId ? \App\Support\Video::thumbnailUrl($videoId) : null);
+    @endphp
+    @if($videoId)
+    <section class="video-section" id="videoSection">
+      <div class="container">
+        @if($settings['video_title'] !== '' || $settings['video_pill'] !== '' || $settings['video_desc'] !== '')
+        <div class="section-header">
+          @if($settings['video_pill'] !== '')<span class="section-pill">{{ $settings['video_pill'] }}</span>@endif
+          @if($settings['video_title'] !== '')<h2 class="section-title">{{ $settings['video_title'] }}</h2>@endif
+          @if($settings['video_desc'] !== '')<p class="section-desc">{{ $settings['video_desc'] }}</p>@endif
+        </div>
+        @endif
+
+        <div class="video-wrap">
+          <div class="video-frame" id="videoFrame" data-embed-url="{{ \App\Support\Video::embedUrl($videoId) }}" data-video-title="{{ $settings['video_title'] ?: $settings['brand_name'] }}">
+            <button type="button" class="video-poster" aria-label="ভিডিওটি চালান">
+              <img src="{{ $videoCover }}" alt="{{ $settings['video_title'] ?: 'প্রোডাক্ট ডেমো ভিডিও' }}" width="1280" height="720" loading="lazy" decoding="async"
+                   @if(! $img('video_thumb')) onerror="this.onerror=null;this.src='{{ \App\Support\Video::thumbnailUrl($videoId, false) }}'" @endif>
+              <span class="video-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span>
+            </button>
+            <noscript><a class="video-fallback" href="{{ \App\Support\Video::watchUrl($videoId) }}" target="_blank" rel="noopener">ইউটিউবে ভিডিওটি দেখুন</a></noscript>
+          </div>
+
+          <div class="video-cta">
+            <a href="#checkoutSection" class="btn btn-primary">
+              <i class="fa-solid fa-cart-shopping"></i> ভিডিও ভালো লেগেছে? এখনই অর্ডার করুন
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+    @endif
 
     <!-- Multi-Product Interactive Checkout Section -->
     <section class="checkout-section" id="checkoutSection">

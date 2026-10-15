@@ -109,6 +109,7 @@ class Seo
                             'url' => self::productUrl($base, $product),
                         ])->all(),
                     ],
+                    ...self::videoNodes($settings, $base),
                 ],
             ],
         ];
@@ -181,6 +182,36 @@ class Seo
                 ],
             ],
         ];
+    }
+
+    /**
+     * The demo video as schema.org VideoObject. Google needs the upload date for it, so without
+     * one the video is simply left out of the markup.
+     *
+     * @param  array<string, string>  $settings
+     * @return array<int, array<string, mixed>>
+     */
+    private static function videoNodes(array $settings, string $base): array
+    {
+        $videoId = Video::youtubeId($settings['video_url'] ?? '');
+        $uploadDate = trim((string) ($settings['video_upload_date'] ?? ''));
+
+        if ($videoId === null || $uploadDate === '') {
+            return [];
+        }
+
+        return [[
+            '@type' => 'VideoObject',
+            '@id' => $base.'/#video',
+            'name' => $settings['video_title'] ?: $settings['brand_name'],
+            'description' => self::describe($settings['video_desc'] ?: $settings['meta_description'], 300),
+            'thumbnailUrl' => [Setting::imageUrl($settings['video_thumb'] ?? '') ?? Video::thumbnailUrl($videoId, false)],
+            'uploadDate' => $uploadDate,
+            'contentUrl' => Video::watchUrl($videoId),
+            'embedUrl' => 'https://www.youtube.com/embed/'.$videoId,
+            'inLanguage' => 'bn-BD',
+            'isPartOf' => ['@id' => $base.'/#webpage'],
+        ]];
     }
 
     private static function productUrl(string $base, Product $product): string

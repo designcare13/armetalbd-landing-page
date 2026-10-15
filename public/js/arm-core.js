@@ -124,6 +124,15 @@
     } catch (error) { /* tracking must never break the page */ }
   }
 
+  // An event of our own (not one of Meta's standard ones), e.g. a video being played.
+  function trackCustom(name, params, gaName) {
+    params = params || {};
+    try {
+      if (typeof window.fbq === 'function') window.fbq('trackCustom', name, params);
+      if (typeof window.gtag === 'function') window.gtag('event', gaName || name, params);
+    } catch (error) { /* tracking must never break the page */ }
+  }
+
   // Calls and WhatsApp chats are conversions too.
   document.addEventListener('click', function (event) {
     var link = event.target.closest ? event.target.closest('a[href^="tel:"], a[href*="api.whatsapp.com"], a[href*="wa.me"]') : null;
@@ -132,5 +141,5 @@
 
   captureAttribution();
 
-  window.ArmTracking = { visitorToken: visitorToken, clientPayload: clientPayload, fbp: fbp, fbc: fbc, track: track };
+  window.ArmTracking = { visitorToken: visitorToken, clientPayload: clientPayload, fbp: fbp, fbc: fbc, track: track, trackCustom: trackCustom };
 })();
