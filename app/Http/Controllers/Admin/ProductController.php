@@ -13,7 +13,10 @@ use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-    private const IMAGE_RULES = ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:min_width=300,min_height=300,max_width=5000,max_height=5000'];
+    /** Smallest accepted side in pixels; below this the popup zoom turns blurry. */
+    public const MIN_IMAGE_SIZE = 800;
+
+    private const IMAGE_RULES = ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:min_width='.self::MIN_IMAGE_SIZE.',min_height='.self::MIN_IMAGE_SIZE.',max_width=5000,max_height=5000'];
 
     public function index(): View
     {
@@ -103,7 +106,7 @@ class ProductController extends Controller
             'image.image' => 'ফাইলটি অবশ্যই একটি ছবি হতে হবে।',
             'image.mimes' => 'ছবি অবশ্যই JPG, PNG বা WEBP ফরম্যাটের হতে হবে।',
             'image.max' => 'ছবির সাইজ ২ MB এর বেশি হতে পারবে না।',
-            'image.dimensions' => 'ছবির সাইজ কমপক্ষে ৩০০×৩০০ এবং সর্বোচ্চ ৫০০০×৫০০০ পিক্সেল হতে হবে।',
+            'image.dimensions' => 'ছবির সাইজ কমপক্ষে ৮০০×৮০০ এবং সর্বোচ্চ ৫০০০×৫০০০ পিক্সেল হতে হবে। জুম পরিষ্কার দেখাতে ১০০০×১০০০ বা তার বেশি মাপের ছবি দিন।',
             'image.uploaded' => 'ছবি আপলোড হয়নি। ফাইলের সাইজ সার্ভারের লিমিটের চেয়ে বড় হতে পারে।',
         ]);
     }

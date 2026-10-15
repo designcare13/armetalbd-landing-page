@@ -43,7 +43,7 @@ class ContentManagementTest extends TestCase
             'stock' => 10,
             'rating' => 4.5,
             'reviews_count' => 3,
-            'image' => UploadedFile::fake()->image('chair.jpg', 600, 600),
+            'image' => UploadedFile::fake()->image('chair.jpg', 800, 800),
         ], $overrides);
     }
 
@@ -144,7 +144,7 @@ class ContentManagementTest extends TestCase
         ]))->assertSessionHasErrors('image');
 
         $this->actingAs($admin)->post('/admin/products', $this->productPayload([
-            'image' => UploadedFile::fake()->image('huge.jpg', 600, 600)->size(3000),
+            'image' => UploadedFile::fake()->image('huge.jpg', 800, 800)->size(3000),
         ]))->assertSessionHasErrors('image');
 
         $this->actingAs($admin)->post('/admin/products', $this->productPayload([
