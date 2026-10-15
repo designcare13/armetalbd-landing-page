@@ -21,7 +21,7 @@
     একই অর্ডার দুইবার তৈরি হচ্ছে কিনা দেখে নিন:
     @foreach($earlierOrders as $earlierOrder)
       <a href="{{ route('admin.orders.show', $earlierOrder) }}" target="_blank" style="color: #92400e; font-weight: 700; font-family: var(--font-en);">{{ $earlierOrder->order_number }}</a>
-      ({{ $earlierOrder->created_at->format('d M Y') }}, ৳{{ number_format($earlierOrder->grand_total) }}){{ $loop->last ? '' : ',' }}
+      ({{ $earlierOrder->created_at->inShopTime()->format('d M Y') }}, ৳{{ number_format($earlierOrder->grand_total) }}){{ $loop->last ? '' : ',' }}
     @endforeach
   </div>
 @endif

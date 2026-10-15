@@ -63,8 +63,8 @@
           @foreach($incompleteOrders as $incompleteOrder)
           <tr>
             <td>
-              <span style="font-size: 0.82rem; color: #64748b;">{{ $incompleteOrder->last_captured_at->format('d M Y') }}</span><br>
-              <span style="font-size: 0.75rem; color: #94a3b8;">{{ $incompleteOrder->last_captured_at->format('h:i A') }}</span>
+              <span style="font-size: 0.82rem; color: #64748b;">{{ $incompleteOrder->last_captured_at->inShopTime()->format('d M Y') }}</span><br>
+              <span style="font-size: 0.75rem; color: #94a3b8;">{{ $incompleteOrder->last_captured_at->inShopTime()->format('h:i A') }}</span>
             </td>
             <td>
               @if($incompleteOrder->customer_name)

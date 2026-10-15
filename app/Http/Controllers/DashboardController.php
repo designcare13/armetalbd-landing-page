@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Product;
+use App\Support\ShopTime;
 
 class DashboardController extends Controller
 {
@@ -15,8 +16,9 @@ class DashboardController extends Controller
         $deliveredOrders = Order::where('status', 'delivered')->count();
 
         $totalRevenue = Order::whereNotIn('status', ['cancelled'])->sum('grand_total');
-        $todayOrders = Order::whereDate('created_at', today())->count();
-        $todayRevenue = Order::whereDate('created_at', today())->whereNotIn('status', ['cancelled'])->sum('grand_total');
+        $today = [ShopTime::startOfDay(), ShopTime::endOfDay()];
+        $todayOrders = Order::whereBetween('created_at', $today)->count();
+        $todayRevenue = Order::whereBetween('created_at', $today)->whereNotIn('status', ['cancelled'])->sum('grand_total');
 
         $totalProducts = Product::count();
         $recentOrders = Order::with('items')->latest()->take(8)->get();

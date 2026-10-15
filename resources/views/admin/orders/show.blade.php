@@ -34,7 +34,7 @@
     <div style="text-align: right;">
       <span style="font-size: 0.85rem; color: #64748b;">অর্ডার নম্বর</span>
       <h3 style="font-size: 1.6rem; font-weight: 700; color: var(--primary); font-family: var(--font-en); margin-bottom: 4px;">{{ $order->order_number }}</h3>
-      <span style="font-size: 0.88rem; color: #64748b;">তারিখ: {{ $order->created_at->format('d M Y, h:i A') }}</span><br>
+      <span style="font-size: 0.88rem; color: #64748b;">তারিখ: {{ $order->created_at->inShopTime()->format('d M Y, h:i A') }}</span><br>
       <span style="font-size: 0.88rem; color: #64748b;">উৎস: {{ $order->sourceLabel() }}</span>
       <div style="margin-top: 8px;">
         <span class="status-badge status-{{ $order->status }}" style="font-size: 0.85rem; padding: 6px 16px;">

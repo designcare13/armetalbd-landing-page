@@ -60,6 +60,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
 
     // Orders Management
     Route::get('/orders', [OrderController::class, 'index'])->name('admin.orders.index');
+    Route::get('/orders/export', [OrderController::class, 'export'])->name('admin.orders.export');
     Route::get('/orders/create', [OrderController::class, 'create'])->name('admin.orders.create');
     Route::post('/orders', [OrderController::class, 'store'])->name('admin.orders.store');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('admin.orders.show');

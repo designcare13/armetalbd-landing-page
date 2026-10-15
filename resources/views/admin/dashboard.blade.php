@@ -84,7 +84,7 @@
               <strong style="font-family: var(--font-en); color: var(--primary);">{{ $order->order_number }}</strong>
             </td>
             <td>
-              <span style="font-size: 0.82rem; color: #64748b;">{{ $order->created_at->format('d M Y, h:i A') }}</span>
+              <span style="font-size: 0.82rem; color: #64748b;">{{ $order->created_at->inShopTime()->format('d M Y, h:i A') }}</span>
             </td>
             <td>
               <strong>{{ $order->customer_name }}</strong><br>

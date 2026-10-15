@@ -20,6 +20,9 @@ return [
 
     'image_disk' => 'uploads',
 
+    // The shop works in Bangladesh time. Dates are stored in UTC and turned into this zone when shown or filtered.
+    'timezone' => 'Asia/Dhaka',
+
     'tabs' => [
         'general' => ['label' => 'ব্র্যান্ড ও যোগাযোগ', 'icon' => 'fa-solid fa-id-card', 'groups' => ['brand', 'contact', 'delivery']],
         'hero' => ['label' => 'হিরো ও টপ বার', 'icon' => 'fa-solid fa-star', 'groups' => ['topbar', 'hero']],

@@ -7,33 +7,38 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Support\MetaTracker;
+use App\Support\ShopTime;
+use App\Support\XlsxWriter;
 use DomainException;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class OrderController extends Controller
 {
+    /** The most orders one Excel file holds, so a huge shop does not run the server out of memory. */
+    private const EXPORT_LIMIT = 20000;
+
+    /** @var array<string, string> */
+    private const STATUS_LABELS = [
+        'pending' => 'পেন্ডিং',
+        'confirmed' => 'কনফার্মড',
+        'processing' => 'প্রসেসিং',
+        'shipped' => 'শিপড',
+        'delivered' => 'ডেলিভার্ড',
+        'cancelled' => 'বাতিল',
+    ];
+
     public function index(Request $request)
     {
-        $query = Order::with('items')->latest();
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('order_number', 'like', "%{$search}%")
-                    ->orWhere('customer_name', 'like', "%{$search}%")
-                    ->orWhere('customer_phone', 'like', "%{$search}%");
-            });
-        }
+        $range = $this->dateRange($request);
+        $query = $this->filteredOrders($request, $range)->with('items')->latest();
 
         $orders = $query->paginate($this->perPage($request))->withQueryString();
 
@@ -41,11 +46,74 @@ class OrderController extends Controller
         $summary = [
             'total' => (int) $statusCounts->sum(),
             'pending' => (int) ($statusCounts['pending'] ?? 0),
-            'today' => Order::whereDate('created_at', today())->count(),
+            'today' => Order::whereBetween('created_at', [ShopTime::startOfDay(), ShopTime::endOfDay()])->count(),
             'delivered_value' => (float) Order::where('status', 'delivered')->sum('grand_total'),
         ];
 
-        return view('admin.orders.index', compact('orders', 'statusCounts', 'summary'));
+        // What the orders on screen add up to, so a daily or monthly sale can be read at a glance.
+        $shown = $this->filteredOrders($request, $range)->toBase()->selectRaw("count(*) as total, coalesce(sum(case when status <> 'cancelled' then grand_total else 0 end), 0) as sales")->first();
+        $filterSummary = ['orders' => (int) $shown->total, 'sales' => (float) $shown->sales];
+
+        return view('admin.orders.index', [
+            'orders' => $orders,
+            'statusCounts' => $statusCounts,
+            'summary' => $summary,
+            'filterSummary' => $filterSummary,
+            'dateFrom' => $range['from'],
+            'dateTo' => $range['to'],
+            'presets' => $this->datePresets(),
+            'exportAvailable' => XlsxWriter::isAvailable(),
+        ]);
+    }
+
+    /**
+     * The orders on screen as an Excel file, with the same status, search and dates as the list.
+     */
+    public function export(Request $request): BinaryFileResponse|RedirectResponse
+    {
+        if (! XlsxWriter::isAvailable()) {
+            return back()->with('error', 'সার্ভারে Excel ফাইল বানানোর সুবিধা (PHP zip) চালু নেই। হোস্টিং সাপোর্টকে জানান।');
+        }
+
+        $range = $this->dateRange($request);
+        $orders = $this->filteredOrders($request, $range)->with('items')->latest()->limit(self::EXPORT_LIMIT)->cursor();
+
+        $rows = (function () use ($orders) {
+            foreach ($orders as $order) {
+                $placed = $order->created_at->inShopTime();
+
+                yield [
+                    $order->order_number,
+                    $placed->format('d/m/Y'),
+                    $placed->format('h:i A'),
+                    $order->customer_name,
+                    $order->customer_phone,
+                    $order->customer_address,
+                    $order->delivery_area === 'inside' ? 'ঢাকা সিটি' : 'ঢাকার বাইরে',
+                    $order->items->map(fn ($item): string => "{$item->product_name} ×{$item->quantity}")->implode('; '),
+                    (int) $order->items->sum('quantity'),
+                    [XlsxWriter::MONEY, (float) $order->subtotal],
+                    [XlsxWriter::MONEY, (float) $order->delivery_charge],
+                    [XlsxWriter::MONEY, (float) $order->grand_total],
+                    self::STATUS_LABELS[$order->status] ?? $order->status,
+                    $order->sourceLabel(),
+                    $order->order_note,
+                    $order->utm_source,
+                    $order->utm_campaign,
+                ];
+            }
+        })();
+
+        $file = XlsxWriter::create('অর্ডার', [
+            'অর্ডার নং', 'তারিখ', 'সময়', 'কাস্টমারের নাম', 'ফোন', 'ঠিকানা', 'ডেলিভারি এলাকা', 'প্রোডাক্ট', 'মোট পিস',
+            'সাবটোটাল (৳)', 'ডেলিভারি চার্জ (৳)', 'মোট বিল (৳)', 'স্ট্যাটাস', 'উৎস', 'নোট', 'UTM সোর্স', 'UTM ক্যাম্পেইন',
+        ], $rows, [16, 12, 10, 22, 14, 38, 14, 46, 9, 14, 16, 14, 12, 18, 28, 14, 20]);
+
+        $name = ($range['from'] || $range['to'])
+            ? 'orders_'.($range['from'] ?? 'start').'_to_'.($range['to'] ?? 'now').'.xlsx'
+            : 'orders-'.ShopTime::startOfDay()->inShopTime()->format('Y-m-d').'.xlsx';
+
+        return response()->download($file, $name, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])->deleteFileAfterSend(true);
     }
 
     public function show(Order $order)
@@ -156,6 +224,78 @@ class OrderController extends Controller
         });
 
         return redirect()->route('admin.orders.index')->with('success', 'অর্ডার সফলভাবে মুছে ফেলা হয়েছে।');
+    }
+
+    /**
+     * The status, search and date filters of the list, shared by the screen and the Excel file.
+     *
+     * @param  array{from: string|null, to: string|null}  $range
+     * @return Builder<Order>
+     */
+    private function filteredOrders(Request $request, array $range): Builder
+    {
+        $query = Order::query();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('search')) {
+            $search = (string) $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhere('customer_phone', 'like', "%{$search}%");
+            });
+        }
+
+        // A day means a day in Bangladesh, which does not line up with the UTC days the dates are stored in.
+        if ($range['from']) {
+            $query->where('created_at', '>=', ShopTime::startOfDay($range['from']));
+        }
+
+        if ($range['to']) {
+            $query->where('created_at', '<=', ShopTime::endOfDay($range['to']));
+        }
+
+        return $query;
+    }
+
+    /**
+     * The "from" and "to" days (Y-m-d) of the list. A bad value is rejected, and a "to" before the "from" is not allowed.
+     *
+     * @return array{from: string|null, to: string|null}
+     */
+    private function dateRange(Request $request): array
+    {
+        $validated = $request->validate([
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
+        ], [
+            'from.date_format' => 'শুরুর তারিখটি সঠিক নয়।',
+            'to.date_format' => 'শেষের তারিখটি সঠিক নয়।',
+            'to.after_or_equal' => 'শেষের তারিখ শুরুর তারিখের আগে হতে পারবে না।',
+        ]);
+
+        return ['from' => $validated['from'] ?? null, 'to' => $validated['to'] ?? null];
+    }
+
+    /**
+     * Quick date choices for the list: label => [from, to].
+     *
+     * @return array<string, array{0: string, 1: string}>
+     */
+    private function datePresets(): array
+    {
+        $today = ShopTime::startOfDay()->inShopTime();
+
+        return [
+            'আজ' => [$today->toDateString(), $today->toDateString()],
+            'গতকাল' => [$today->copy()->subDay()->toDateString(), $today->copy()->subDay()->toDateString()],
+            'গত ৭ দিন' => [$today->copy()->subDays(6)->toDateString(), $today->toDateString()],
+            'এই মাস' => [$today->copy()->startOfMonth()->toDateString(), $today->toDateString()],
+            'গত মাস' => [$today->copy()->subMonthNoOverflow()->startOfMonth()->toDateString(), $today->copy()->subMonthNoOverflow()->endOfMonth()->toDateString()],
+        ];
     }
 
     private function notEditableMessage(Order $order): string

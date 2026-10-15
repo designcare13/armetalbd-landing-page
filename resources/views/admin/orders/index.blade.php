@@ -14,7 +14,8 @@
     'delivered' => 'ডেলিভার্ড',
     'cancelled' => 'বাতিল',
   ];
-  $keep = request()->only('per_page');
+  $keep = array_filter(request()->only(['per_page', 'from', 'to']));
+  $filtersActive = request()->filled('status') || request()->filled('search') || $dateFrom || $dateTo;
   $activeStatus = request('status');
 @endphp
 
@@ -42,6 +43,18 @@
   }
   .filter-pill.active .pill-count { background: rgba(255,255,255,0.22); color: #fff; }
   .order-search { display: flex; gap: 8px; }
+  .date-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; margin: -6px 0 18px; padding: 12px 14px; background: #f8fafc; border: 1px solid var(--gray-light); border-radius: 12px; }
+  .date-form { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .date-form label { font-size: 0.85rem; font-weight: 700; color: #475569; }
+  .date-form input[type=date] { padding: 7px 10px; border: 1.5px solid var(--gray-light); border-radius: 8px; font: inherit; font-size: 0.88rem; background: #fff; }
+  .date-form input[type=date]:focus { outline: none; border-color: var(--primary); }
+  .date-presets { display: flex; gap: 6px; flex-wrap: wrap; }
+  .preset { padding: 5px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; text-decoration: none; background: #fff; color: #475569; border: 1px solid var(--gray-light); }
+  .preset:hover { border-color: var(--primary); color: var(--primary); }
+  .preset.active { background: var(--primary-light); color: var(--primary-dark); border-color: var(--primary); }
+  .result-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; font-size: 0.92rem; }
+  .result-bar .figures { color: #334155; }
+  .result-bar strong { font-family: var(--font-en); }
   .order-search .form-control { width: 240px; padding: 8px 12px; font-size: 0.88rem; }
 
   .order-table th, .order-table td { padding-left: 12px; padding-right: 12px; }
@@ -141,9 +154,11 @@
       @if($activeStatus)
         <input type="hidden" name="status" value="{{ $activeStatus }}">
       @endif
-      @if(request('per_page'))
-        <input type="hidden" name="per_page" value="{{ request('per_page') }}">
-      @endif
+      @foreach(['per_page', 'from', 'to'] as $kept)
+        @if(request($kept))
+          <input type="hidden" name="{{ $kept }}" value="{{ request($kept) }}">
+        @endif
+      @endforeach
       <input type="text" name="search" class="form-control" placeholder="অর্ডার নং, নাম বা ফোন..." value="{{ request('search') }}">
       <button type="submit" class="btn btn-primary btn-sm">
         <i class="fa-solid fa-magnifying-glass"></i> খুঁজুন
@@ -154,6 +169,47 @@
         </a>
       @endif
     </form>
+  </div>
+
+  <div class="date-row">
+    <form action="{{ route('admin.orders.index') }}" method="GET" class="date-form">
+      @foreach(['status' => $activeStatus, 'search' => request('search'), 'per_page' => request('per_page')] as $name => $value)
+        @if($value)
+          <input type="hidden" name="{{ $name }}" value="{{ $value }}">
+        @endif
+      @endforeach
+      <label for="from"><i class="fa-regular fa-calendar"></i> তারিখ</label>
+      <input type="date" name="from" id="from" value="{{ $dateFrom }}" aria-label="শুরুর তারিখ">
+      <span style="color: #64748b;">থেকে</span>
+      <input type="date" name="to" id="to" value="{{ $dateTo }}" aria-label="শেষের তারিখ">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-filter"></i> দেখুন</button>
+      @if($dateFrom || $dateTo)
+        <a href="{{ route('admin.orders.index', array_filter(['status' => $activeStatus, 'search' => request('search'), 'per_page' => request('per_page')])) }}" class="btn btn-secondary btn-sm" title="তারিখ ফিল্টার সরান"><i class="fa-solid fa-xmark"></i></a>
+      @endif
+    </form>
+
+    <div class="date-presets">
+      @foreach($presets as $label => [$presetFrom, $presetTo])
+        <a href="{{ route('admin.orders.index', array_filter(['status' => $activeStatus, 'search' => request('search'), 'per_page' => request('per_page'), 'from' => $presetFrom, 'to' => $presetTo])) }}"
+           class="preset {{ $dateFrom === $presetFrom && $dateTo === $presetTo ? 'active' : '' }}">{{ $label }}</a>
+      @endforeach
+    </div>
+  </div>
+
+  <div class="result-bar">
+    <div class="figures">
+      @if($filtersActive)
+        এই ফিল্টারে <strong>{{ number_format($filterSummary['orders']) }}</strong> টি অর্ডার, বিক্রি (বাতিল বাদে) <strong style="color: var(--primary);">৳{{ number_format($filterSummary['sales']) }}</strong>
+      @else
+        সব অর্ডার মিলিয়ে <strong>{{ number_format($filterSummary['orders']) }}</strong> টি, বিক্রি (বাতিল বাদে) <strong style="color: var(--primary);">৳{{ number_format($filterSummary['sales']) }}</strong>
+      @endif
+    </div>
+
+    @if($exportAvailable)
+      <a href="{{ route('admin.orders.export', array_filter(['status' => $activeStatus, 'search' => request('search'), 'from' => $dateFrom, 'to' => $dateTo])) }}" class="btn btn-secondary btn-sm" title="এখন যে অর্ডারগুলো দেখাচ্ছে সেগুলো Excel ফাইলে নামান">
+        <i class="fa-solid fa-file-excel" style="color: #15803d;"></i> Excel ডাউনলোড ({{ number_format(min($filterSummary['orders'], 20000)) }} টি)
+      </a>
+    @endif
   </div>
 
   @if($orders->isEmpty())
@@ -188,8 +244,8 @@
                   <span class="source-chip" title="অর্ডারের উৎস">{{ $order->sourceLabel() }}</span>
                 @endif
                 <br>
-                <span class="muted nowrap">{{ $order->created_at->format('d M Y') }}</span><br>
-                <span class="faint nowrap">{{ $order->created_at->format('h:i A') }}</span>
+                <span class="muted nowrap">{{ $order->created_at->inShopTime()->format('d M Y') }}</span><br>
+                <span class="faint nowrap">{{ $order->created_at->inShopTime()->format('h:i A') }}</span>
               </div>
             </td>
             <td class="cell-customer" data-label="কাস্টমার">

@@ -150,7 +150,7 @@
         <tbody>
           @foreach($history as $event)
             <tr>
-              <td style="font-size: 0.82rem; color: #64748b; white-space: nowrap;">{{ $event->created_at->format('d M, h:i A') }}</td>
+              <td style="font-size: 0.82rem; color: #64748b; white-space: nowrap;">{{ $event->created_at->inShopTime()->format('d M, h:i A') }}</td>
               <td style="font-family: var(--font-en); font-weight: 600;">{{ $event->event_name }}@if($event->is_test) <span style="color: #94a3b8; font-weight: 400;">(পরীক্ষা)</span>@endif</td>
               <td style="font-family: var(--font-en); font-size: 0.85rem;">{{ $event->reference ?: '-' }}</td>
               <td style="font-family: var(--font-en);">{{ $event->value !== null ? '৳'.number_format($event->value) : '-' }}</td>
