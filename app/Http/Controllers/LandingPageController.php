@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\Setting;
+use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -71,111 +72,20 @@ class LandingPageController extends Controller
             'items.min' => 'অন্তত একটি প্রোডাক্ট নির্বাচন করুন।',
         ]);
 
-        $siteSettings = Setting::allWithDefaults();
-        $insideCharge = (float) $siteSettings['delivery_inside'];
-        $outsideCharge = (float) $siteSettings['delivery_outside'];
-        $deliveryCharge = ($validated['delivery_area'] === 'inside') ? $insideCharge : $outsideCharge;
-
-        DB::beginTransaction();
         try {
-            $subtotal = 0;
-            $orderItemsData = [];
+            $order = DB::transaction(function () use ($validated): Order {
+                $order = Order::place($validated, $validated['items']);
 
-            foreach ($validated['items'] as $itemInput) {
-                $product = Product::where('is_active', true)->lockForUpdate()->find($itemInput['id']);
-                if (! $product) {
-                    continue;
-                }
+                IncompleteOrder::discardForOrder($validated['visitor_token'] ?? null, $validated['customer_phone']);
 
-                $qty = (int) $itemInput['qty'];
-
-                if ($product->stock < $qty) {
-                    DB::rollBack();
-
-                    return response()->json([
-                        'success' => false,
-                        'message' => $product->stock > 0
-                            ? "দুঃখিত, '{$product->name}' এর মাত্র {$product->stock} টি স্টকে আছে।"
-                            : "দুঃখিত, '{$product->name}' এখন স্টকে নেই।",
-                    ], 422);
-                }
-
-                $product->decrement('stock', $qty);
-                $price = (float) $product->price;
-                $lineTotal = $price * $qty;
-                $subtotal += $lineTotal;
-
-                $orderItemsData[] = [
-                    'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'product_image' => $product->image_url,
-                    'unit_price' => $price,
-                    'quantity' => $qty,
-                    'line_total' => $lineTotal,
-                ];
-            }
-
-            if (empty($orderItemsData)) {
-                DB::rollBack();
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'নির্বাচিত কোনো ভ্যালিড প্রোডাক্ট পাওয়া যায়নি।',
-                ], 422);
-            }
-
-            do {
-                $orderNumber = 'ARM-'.strtoupper(Str::random(3)).'-'.random_int(1000, 9999);
-            } while (Order::where('order_number', $orderNumber)->exists());
-            $grandTotal = $subtotal + $deliveryCharge;
-
-            $order = Order::create([
-                'order_number' => $orderNumber,
-                'customer_name' => $validated['customer_name'],
-                'customer_phone' => $validated['customer_phone'],
-                'customer_address' => $validated['customer_address'],
-                'delivery_area' => $validated['delivery_area'],
-                'delivery_charge' => $deliveryCharge,
-                'subtotal' => $subtotal,
-                'grand_total' => $grandTotal,
-                'payment_method' => 'cod',
-                'order_note' => $validated['order_note'] ?? null,
-                'status' => 'pending',
-            ]);
-
-            foreach ($orderItemsData as $item) {
-                $order->items()->create($item);
-            }
-
-            IncompleteOrder::discardForOrder($validated['visitor_token'] ?? null, $validated['customer_phone']);
-
-            DB::commit();
-
-            // Text shown on the order confirmation popup
-            $deliveryText = ($order->delivery_area === 'inside') ? 'ঢাকা সিটির ভেতরে (৳'.$deliveryCharge.')' : 'ঢাকার বাইরে (৳'.$deliveryCharge.')';
-
+                return $order;
+            });
+        } catch (DomainException $e) {
             return response()->json([
-                'success' => true,
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
-                'customer_name' => $order->customer_name,
-                'customer_phone' => $order->customer_phone,
-                'customer_address' => $order->customer_address,
-                'delivery_area_text' => $deliveryText,
-                'subtotal' => $subtotal,
-                'delivery_charge' => $deliveryCharge,
-                'grand_total' => $grandTotal,
-                'items_summary' => collect($orderItemsData)->map(fn ($i) => "{$i['product_name']} (×{$i['quantity']})")->implode(', '),
-                'pixel_purchase_payload' => [
-                    'value' => $grandTotal,
-                    'currency' => 'BDT',
-                    'content_ids' => collect($orderItemsData)->pluck('product_id')->toArray(),
-                    'num_items' => collect($orderItemsData)->sum('quantity'),
-                ],
-            ]);
-
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
         } catch (\Exception $e) {
-            DB::rollBack();
             report($e);
 
             return response()->json([
@@ -183,6 +93,33 @@ class LandingPageController extends Controller
                 'message' => 'অর্ডার প্রসেস করার সময় সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।',
             ], 500);
         }
+
+        $deliveryCharge = (float) $order->delivery_charge;
+        $subtotal = (float) $order->subtotal;
+        $grandTotal = (float) $order->grand_total;
+
+        // Text shown on the order confirmation popup
+        $deliveryText = ($order->delivery_area === 'inside') ? 'ঢাকা সিটির ভেতরে (৳'.$deliveryCharge.')' : 'ঢাকার বাইরে (৳'.$deliveryCharge.')';
+
+        return response()->json([
+            'success' => true,
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'customer_name' => $order->customer_name,
+            'customer_phone' => $order->customer_phone,
+            'customer_address' => $order->customer_address,
+            'delivery_area_text' => $deliveryText,
+            'subtotal' => $subtotal,
+            'delivery_charge' => $deliveryCharge,
+            'grand_total' => $grandTotal,
+            'items_summary' => $order->items->map(fn ($item) => "{$item->product_name} (×{$item->quantity})")->implode(', '),
+            'pixel_purchase_payload' => [
+                'value' => $grandTotal,
+                'currency' => 'BDT',
+                'content_ids' => $order->items->pluck('product_id')->all(),
+                'num_items' => $order->items->sum('quantity'),
+            ],
+        ]);
     }
 
     /**

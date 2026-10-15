@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\IncompleteOrderController as AdminIncompleteOrderController;
+use App\Http\Controllers\Admin\IncompleteOrderConversionController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProfileController;
@@ -60,6 +61,8 @@ Route::middleware('auth')->prefix('admin')->group(function () {
     Route::get('/incomplete-orders', [AdminIncompleteOrderController::class, 'index'])->name('admin.incomplete-orders.index');
     Route::patch('/incomplete-orders/{incompleteOrder}/status', [AdminIncompleteOrderController::class, 'updateStatus'])->name('admin.incomplete-orders.status');
     Route::delete('/incomplete-orders/{incompleteOrder}', [AdminIncompleteOrderController::class, 'destroy'])->name('admin.incomplete-orders.destroy');
+    Route::get('/incomplete-orders/{incompleteOrder}/order', [IncompleteOrderConversionController::class, 'create'])->name('admin.incomplete-orders.convert');
+    Route::post('/incomplete-orders/{incompleteOrder}/order', [IncompleteOrderConversionController::class, 'store'])->name('admin.incomplete-orders.convert.store');
 
     // Products Management
     Route::resource('products', ProductController::class)->except('show')->names('admin.products');

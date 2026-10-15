@@ -109,13 +109,18 @@
               </form>
             </td>
             <td>
-              <form action="{{ route('admin.incomplete-orders.destroy', $incompleteOrder) }}" method="POST" data-confirm="আপনি কি নিশ্চিত এই এন্ট্রিটি মুছে ফেলতে চান?" style="margin: 0;">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-danger btn-sm" title="মুছে ফেলুন">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </form>
+              <div style="display: flex; gap: 6px;">
+                <a href="{{ route('admin.incomplete-orders.convert', $incompleteOrder) }}" class="btn btn-primary btn-sm" title="কাস্টমার ফোনে কনফার্ম করলে আসল অর্ডার তৈরি করুন">
+                  <i class="fa-solid fa-bag-shopping"></i> অর্ডার করুন
+                </a>
+                <form action="{{ route('admin.incomplete-orders.destroy', $incompleteOrder) }}" method="POST" data-confirm="আপনি কি নিশ্চিত এই এন্ট্রিটি মুছে ফেলতে চান?" style="margin: 0;">
+                  @csrf
+                  @method('DELETE')
+                  <button type="submit" class="btn btn-danger btn-sm" title="মুছে ফেলুন">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
+              </div>
             </td>
           </tr>
           @endforeach
