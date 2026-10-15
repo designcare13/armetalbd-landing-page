@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\FaqController;
+use App\Http\Controllers\Admin\IncompleteOrderController as AdminIncompleteOrderController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProfileController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\IncompleteOrderController;
 use App\Http\Controllers\LandingPageController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +26,7 @@ use Illuminate\Support\Facades\Route;
 // Public Dynamic Landing Page
 Route::get('/', [LandingPageController::class, 'index'])->name('home');
 Route::post('/order', [LandingPageController::class, 'order'])->name('landing.order')->middleware('throttle:10,1');
+Route::post('/incomplete-order', [IncompleteOrderController::class, 'store'])->name('landing.incomplete')->middleware('throttle:60,1');
 
 // Authentication Routes
 Route::middleware('guest')->group(function () {
@@ -52,6 +55,11 @@ Route::middleware('auth')->prefix('admin')->group(function () {
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('admin.orders.show');
     Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('admin.orders.status');
     Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('admin.orders.destroy');
+
+    // Incomplete orders (checkout forms started but not submitted)
+    Route::get('/incomplete-orders', [AdminIncompleteOrderController::class, 'index'])->name('admin.incomplete-orders.index');
+    Route::patch('/incomplete-orders/{incompleteOrder}/status', [AdminIncompleteOrderController::class, 'updateStatus'])->name('admin.incomplete-orders.status');
+    Route::delete('/incomplete-orders/{incompleteOrder}', [AdminIncompleteOrderController::class, 'destroy'])->name('admin.incomplete-orders.destroy');
 
     // Products Management
     Route::resource('products', ProductController::class)->except('show')->names('admin.products');

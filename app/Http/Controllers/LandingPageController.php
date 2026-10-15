@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Faq;
+use App\Models\IncompleteOrder;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
@@ -50,7 +51,7 @@ class LandingPageController extends Controller
 
     public function order(Request $request)
     {
-        $request->merge(['customer_phone' => $this->normalizePhone((string) $request->input('customer_phone'))]);
+        $request->merge(['customer_phone' => Order::normalizePhone((string) $request->input('customer_phone'))]);
 
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
@@ -58,6 +59,7 @@ class LandingPageController extends Controller
             'customer_address' => 'required|string|max:1000',
             'delivery_area' => 'required|in:inside,outside',
             'order_note' => 'nullable|string|max:500',
+            'visitor_token' => 'nullable|uuid',
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|exists:products,id',
             'items.*.qty' => 'required|integer|min:1|max:50',
@@ -145,6 +147,8 @@ class LandingPageController extends Controller
                 $order->items()->create($item);
             }
 
+            IncompleteOrder::discardForOrder($validated['visitor_token'] ?? null, $validated['customer_phone']);
+
             DB::commit();
 
             // Text shown on the order confirmation popup
@@ -207,20 +211,5 @@ class LandingPageController extends Controller
             'hero_card_old_price' => $product->old_price ? $bangla((float) $product->old_price) : '',
             'hero_badge' => $product->discount_label ? ($product->badge ? $product->badge.' • '.$product->discount_label : $product->discount_label) : (string) $product->badge,
         ]);
-    }
-
-    /**
-     * Accept Bangla digits, spaces, dashes and +88 / 88 prefixes in phone numbers.
-     */
-    private function normalizePhone(string $phone): string
-    {
-        $phone = strtr($phone, ['০' => '0', '১' => '1', '২' => '2', '৩' => '3', '৪' => '4', '৫' => '5', '৬' => '6', '৭' => '7', '৮' => '8', '৯' => '9']);
-        $digits = preg_replace('/\D+/', '', $phone) ?? '';
-
-        if (str_starts_with($digits, '880') && strlen($digits) === 13) {
-            return '0'.substr($digits, 3);
-        }
-
-        return $digits;
     }
 }

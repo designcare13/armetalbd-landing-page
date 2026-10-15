@@ -439,6 +439,16 @@
         </a>
       </li>
 
+      <li class="nav-item {{ request()->routeIs('admin.incomplete-orders.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.incomplete-orders.index') }}">
+          <i class="fa-solid fa-hourglass-half"></i>
+          <span>ইনকমপ্লিট অর্ডার</span>
+          @if($newIncompleteOrdersCount > 0)
+            <span class="badge-count">{{ $newIncompleteOrdersCount }}</span>
+          @endif
+        </a>
+      </li>
+
       <li class="nav-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
         <a href="{{ route('admin.products.index') }}">
           <i class="fa-solid fa-couch"></i>

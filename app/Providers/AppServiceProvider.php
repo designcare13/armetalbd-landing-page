@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\IncompleteOrder;
 use App\Models\Setting;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
@@ -26,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer(['admin.layout', 'auth.layout'], function ($view): void {
             $view->with('site', Setting::allWithDefaults());
+        });
+
+        View::composer('admin.layout', function ($view): void {
+            $view->with('newIncompleteOrdersCount', IncompleteOrder::notExpired()->where('status', 'new')->count());
         });
     }
 }

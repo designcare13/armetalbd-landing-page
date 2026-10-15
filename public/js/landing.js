@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderProducts('all');
   updateOrderSummary();
   initFaqAccordion();
+  initIncompleteOrderCapture();
 });
 
 // Escape text before injecting it into innerHTML
@@ -311,6 +312,8 @@ function updateOrderSummary() {
   if (subtotalEl) subtotalEl.textContent = formatBDT(subtotal);
   if (deliveryEl) deliveryEl.textContent = formatBDT(cart.length > 0 ? deliveryCharge : 0);
   if (totalEl) totalEl.textContent = formatBDT(grandTotal);
+
+  scheduleIncompleteCapture();
 }
 
 // ---------- Quick View popup ----------
@@ -548,6 +551,102 @@ function trackPixelAddToCart(product) {
   }
 }
 
+// ---------- Incomplete order capture ----------
+// Once a valid phone number is typed, the details so far are saved on the server so the team can
+// follow up if the order is never completed. The server removes them as soon as an order is placed.
+const VISITOR_TOKEN_KEY = 'arm_visitor_token';
+let incompleteTimer = null;
+let lastIncompleteBody = '';
+
+function newVisitorToken() {
+  if (window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+// One anonymous id per browser; null when storage is blocked (private mode), in which case nothing is saved.
+function getVisitorToken() {
+  try {
+    let token = localStorage.getItem(VISITOR_TOKEN_KEY);
+    if (!token) {
+      token = newVisitorToken();
+      localStorage.setItem(VISITOR_TOKEN_KEY, token);
+    }
+    return token;
+  } catch (error) {
+    return null;
+  }
+}
+
+function buildIncompletePayload() {
+  const phone = normalizePhone(document.getElementById('customerPhone')?.value || '');
+  const token = getVisitorToken();
+  if (!token || !/^01[3-9]\d{8}$/.test(phone)) return null;
+
+  const areaInput = document.querySelector('input[name="deliveryArea"]:checked');
+  return {
+    visitor_token: token,
+    customer_phone: phone,
+    customer_name: (document.getElementById('customerName')?.value || '').trim(),
+    customer_address: (document.getElementById('customerAddress')?.value || '').trim(),
+    delivery_area: areaInput ? areaInput.value : null,
+    items: cart.map(item => ({ id: item.id, qty: item.qty })),
+  };
+}
+
+function sendIncompleteOrder() {
+  incompleteTimer = null;
+  const payload = buildIncompletePayload();
+  if (!payload || !window.STORE_CONFIG || !window.STORE_CONFIG.incompleteUrl) return;
+
+  const body = JSON.stringify(payload);
+  if (body === lastIncompleteBody) return;
+  lastIncompleteBody = body;
+
+  fetch(window.STORE_CONFIG.incompleteUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-CSRF-TOKEN': window.STORE_CONFIG.csrfToken,
+    },
+    body,
+    keepalive: true,
+  }).catch(() => { lastIncompleteBody = ''; }); // failures are silent; the next change retries
+}
+
+function scheduleIncompleteCapture() {
+  clearTimeout(incompleteTimer);
+  incompleteTimer = setTimeout(sendIncompleteOrder, 1500);
+}
+
+function cancelIncompleteCapture() {
+  clearTimeout(incompleteTimer);
+  incompleteTimer = null;
+  lastIncompleteBody = '';
+}
+
+function initIncompleteOrderCapture() {
+  ['customerName', 'customerPhone', 'customerAddress'].forEach(id => {
+    const field = document.getElementById(id);
+    if (field) field.addEventListener('input', scheduleIncompleteCapture);
+  });
+  document.querySelectorAll('input[name="deliveryArea"]').forEach(radio => {
+    radio.addEventListener('change', scheduleIncompleteCapture);
+  });
+
+  // Save right away if the visitor leaves while a change is still waiting.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && incompleteTimer) {
+      clearTimeout(incompleteTimer);
+      sendIncompleteOrder();
+    }
+  });
+}
+
 // Handle Order Submission via AJAX
 async function handleOrderSubmit(event) {
   event.preventDefault();
@@ -584,6 +683,7 @@ async function handleOrderSubmit(event) {
     customer_address: address,
     delivery_area: deliveryArea,
     order_note: note,
+    visitor_token: getVisitorToken(),
     items: cart.map(i => ({ id: i.id, qty: i.qty }))
   };
 
@@ -632,6 +732,7 @@ async function handleOrderSubmit(event) {
     document.getElementById('confirmProductsList').textContent = result.items_summary;
 
     // Show modal and reset cart
+    cancelIncompleteCapture();
     document.getElementById('orderSuccessModal').classList.add('open');
     cart = [];
     document.getElementById('orderForm').reset();

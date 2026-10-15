@@ -1406,6 +1406,21 @@ button, input, select, textarea {
   box-shadow: 0 12px 25px rgba(0, 128, 79, 0.4);
 }
 
+.form-privacy-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: -6px 0 18px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--gray);
+}
+
+.form-privacy-note i {
+  color: var(--primary);
+  margin-top: 3px;
+}
+
 .order-guarantee-note {
   text-align: center;
   font-size: 0.82rem;

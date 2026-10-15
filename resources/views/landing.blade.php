@@ -306,6 +306,11 @@
                 <input type="tel" id="customerPhone" class="form-control" placeholder="যেমন: 01805962220" required>
               </div>
 
+              <p class="form-privacy-note">
+                <i class="fa-solid fa-shield-halved"></i>
+                আপনার নম্বর দিলে অর্ডার সম্পন্ন না হলেও আমাদের প্রতিনিধি ফোন করে সহায়তা করতে পারেন। আপনার তথ্য গোপন রাখা হবে এবং নির্দিষ্ট সময় পর মুছে ফেলা হবে।
+              </p>
+
               <div class="form-group">
                 <label for="customerAddress" class="form-label">সম্পূর্ণ ঠিকানা (বাসা/রোড, এলাকা, জেলা) <span class="req">*</span></label>
                 <textarea id="customerAddress" rows="3" class="form-control" placeholder="যেমন: বাড়ি নং ১২, রোড ৫, মিরপুর-১০, ঢাকা" required></textarea>
@@ -613,6 +618,7 @@
         outsideCharge: {{ (int)($settings['delivery_outside'] ?? 300) }},
         csrfToken: '{{ csrf_token() }}',
         orderUrl: '{{ route('landing.order') }}',
+        incompleteUrl: '{{ route('landing.incomplete') }}',
         phone: @json($settings['phone'] ?? '01805962220'),
         pixelId: '{{ $settings['facebook_pixel_id'] ?? '' }}'
     };
