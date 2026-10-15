@@ -29,9 +29,18 @@ class ProductController extends Controller
 
     public function index(Request $request): View
     {
-        $products = Product::with('category')->latest()->paginate($this->perPage($request))->withQueryString();
+        $search = trim((string) $request->query('search'));
 
-        return view('admin.products.index', compact('products'));
+        $products = Product::with('category')
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search): void {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('category', fn ($category) => $category->where('name', 'like', "%{$search}%"));
+            }))
+            ->latest()
+            ->paginate($this->perPage($request))
+            ->withQueryString();
+
+        return view('admin.products.index', compact('products', 'search'));
     }
 
     public function create(): View

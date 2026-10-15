@@ -11,6 +11,9 @@ class Product extends Model
 {
     use HasFactory;
 
+    /** At or below this many pieces the admin list marks the stock as running low. */
+    public const LOW_STOCK_LIMIT = 5;
+
     protected $fillable = [
         'category_id',
         'name',
