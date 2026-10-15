@@ -22,6 +22,8 @@ class Product extends Model
         'badge',
         'short_description',
         'description',
+        'seo_title',
+        'seo_description',
         'specs',
         'rating',
         'reviews_count',

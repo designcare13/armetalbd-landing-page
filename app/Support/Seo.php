@@ -128,11 +128,12 @@ class Seo
         $price = number_format((float) $product->price, 2, '.', '');
         $brand = $settings['brand_name'];
 
-        $description = self::describe($product->short_description ?: $product->description, 155)
+        $description = self::describe($product->seo_description, 320)
+            ?: self::describe($product->short_description ?: $product->description, 155)
             ?: "{$product->name}, {$brand}-এর নিজস্ব কারখানায় তৈরি। সারা দেশে ক্যাশ অন ডেলিভারি।";
 
         return [
-            'title' => "{$product->name} | ৳".number_format((float) $product->price)." | {$brand}",
+            'title' => filled($product->seo_title) ? trim($product->seo_title) : "{$product->name} | ৳".number_format((float) $product->price)." | {$brand}",
             'description' => $description,
             'canonical' => $url,
             'image' => $product->image_url,

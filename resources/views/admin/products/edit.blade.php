@@ -74,6 +74,8 @@
       <small style="color: #64748b;">ফাঁকা রাখলে পপআপে সংক্ষিপ্ত বিবরণ দেখাবে। লাইন ভেঙে লিখলে পপআপেও সেভাবেই দেখাবে।</small>
     </div>
 
+    @include('admin.products._seo')
+
     <div class="form-group">
       <label class="form-label" for="specs">প্রোডাক্ট বৈশিষ্ট্যসমূহ (প্রতি লাইনে একটি করে বৈশিষ্ট্য)</label>
       <textarea name="specs" id="specs" rows="4" class="form-control">{{ old('specs', is_array($product->specs) ? implode("\n", $product->specs) : $product->specs) }}</textarea>

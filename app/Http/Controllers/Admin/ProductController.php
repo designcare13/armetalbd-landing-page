@@ -105,6 +105,8 @@ class ProductController extends Controller
             'badge' => 'nullable|string|max:50',
             'short_description' => 'nullable|string|max:1000',
             'description' => 'nullable|string|max:5000',
+            'seo_title' => 'nullable|string|max:120',
+            'seo_description' => 'nullable|string|max:320',
             'specs' => 'nullable|string|max:3000',
             'stock' => 'required|integer|min:0|max:1000000',
             'rating' => 'required|numeric|min:0|max:5',
