@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Support\Seo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -253,6 +254,27 @@ class SeoTest extends TestCase
         $this->assertNotContains('http://localhost/products/'.$hidden->slug, $locations);
         $this->assertSame('https://example.com/photo.jpg', (string) $xml->xpath('//i:image/i:loc')[0]);
         $this->assertNotEmpty((string) $xml->xpath('//s:url/s:lastmod')[1]);
+    }
+
+    public function test_sitemap_still_works_when_old_products_have_missing_or_broken_timestamps(): void
+    {
+        // Products brought in from an old database dump can have no dates, or dates that are not real dates.
+        $noDates = Product::factory()->create();
+        $brokenDates = Product::factory()->create();
+        $normal = Product::factory()->create();
+        DB::table('products')->where('id', $noDates->id)->update(['created_at' => null, 'updated_at' => null]);
+        DB::table('products')->where('id', $brokenDates->id)->update(['created_at' => 'not a date', 'updated_at' => '0000-00-00 00:00:00']);
+
+        $response = $this->visit('/sitemap.xml')->assertOk();
+
+        $xml = simplexml_load_string($response->getContent());
+        $this->assertNotFalse($xml, 'the sitemap must be well-formed XML');
+        $xml->registerXPathNamespace('s', 'http://www.sitemaps.org/schemas/sitemap/0.9');
+        $this->assertCount(4, $xml->xpath('//s:url'));
+        foreach ($xml->xpath('//s:url/s:lastmod') as $lastModified) {
+            $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T/', (string) $lastModified);
+        }
+        $this->assertStringContainsString('/products/'.$normal->slug, $response->getContent());
     }
 
     public function test_robots_txt_hides_admin_pages_and_points_to_the_sitemap(): void
