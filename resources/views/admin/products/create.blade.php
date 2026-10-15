@@ -50,8 +50,9 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="discount_text">ছাড়ের টেক্সট</label>
-        <input type="text" name="discount_text" id="discount_text" class="form-control" value="{{ old('discount_text') }}" placeholder="যেমন: ১৭% ছাড়">
+        <label class="form-label" for="discount_text">ছাড়ের টেক্সট (ঐচ্ছিক)</label>
+        <input type="text" name="discount_text" id="discount_text" class="form-control" value="{{ old('discount_text') }}" placeholder="অটো হিসাব হবে">
+        <small style="color: #64748b;">ফাঁকা রাখলে দাম থেকে ছাড়ের শতাংশ অটো হিসাব হবে। বিশেষ অফারের টেক্সট (যেমন: ঈদ অফার) লিখলে সেটাই দেখাবে।</small>
       </div>
     </div>
 

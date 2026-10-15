@@ -33,7 +33,7 @@ class LandingPageController extends Controller
                 'category' => $p->category ? $p->category->slug : 'other',
                 'price' => (float) $p->price,
                 'oldPrice' => $p->old_price ? (float) $p->old_price : null,
-                'discount' => $p->discount_text,
+                'discount' => $p->discount_label,
                 'image' => $p->image_url,
                 'rating' => (float) $p->rating,
                 'reviews' => (int) $p->reviews_count,
@@ -204,7 +204,7 @@ class LandingPageController extends Controller
             'hero_card_sub' => Str::limit((string) $product->short_description, 90),
             'hero_card_new_price' => $bangla((float) $product->price),
             'hero_card_old_price' => $product->old_price ? $bangla((float) $product->old_price) : '',
-            'hero_badge' => $product->discount_text ? ($product->badge ? $product->badge.' • '.$product->discount_text : $product->discount_text) : (string) $product->badge,
+            'hero_badge' => $product->discount_label ? ($product->badge ? $product->badge.' • '.$product->discount_label : $product->discount_label) : (string) $product->badge,
         ]);
     }
 
