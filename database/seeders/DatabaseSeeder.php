@@ -29,7 +29,6 @@ class DatabaseSeeder extends Seeder
         $settings = [
             'site_title' => 'AR Metal BD — প্রিমিয়াম সুইং চেয়ার (দোলনা) ও মেটাল ফার্নিচার',
             'meta_description' => 'সরাসরি নিজস্ব কারখানা থেকে প্রিমিয়াম কোয়ালিটির সুইং চেয়ার (দোলনা), বেবি কট, মেটাল বেড এবং কিচেন ট্রলি। সারাদেশে ক্যাশ অন ডেলিভারি!',
-            'meta_keywords' => 'AR Metal BD, Swing Chair, Dolna, দোলনা, সুইং চেয়ার, Baby Cot, Metal Bed, Kitchen Trolley, Furniture Bangladesh',
             'meta_image' => 'https://armetalbd.com/uploads/1000077471_1772519549643_rj8kri.jpg',
             'facebook_pixel_id' => '', // Set the real Pixel ID from the admin settings page
             'phone' => '01805962220',

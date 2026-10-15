@@ -16,6 +16,9 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IncompleteOrderController;
 use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\ProductPageController;
+use App\Http\Controllers\RobotsController;
+use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,6 +29,9 @@ use Illuminate\Support\Facades\Route;
 
 // Public Dynamic Landing Page
 Route::get('/', [LandingPageController::class, 'index'])->name('home');
+Route::get('/products/{product:slug}', [ProductPageController::class, 'show'])->name('products.show');
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+Route::get('/robots.txt', RobotsController::class)->name('robots');
 Route::post('/order', [LandingPageController::class, 'order'])->name('landing.order')->middleware('throttle:10,1');
 Route::post('/incomplete-order', [IncompleteOrderController::class, 'store'])->name('landing.incomplete')->middleware('throttle:60,1');
 

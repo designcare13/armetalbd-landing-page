@@ -6,18 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   
-  <!-- Dynamic SEO Meta Tags -->
-  <title>{{ $settings['site_title'] ?? 'AR Metal BD — প্রিমিয়াম সুইং চেয়ার (দোলনা) ও মেটাল ফার্নিচার' }}</title>
-  <meta name="description" content="{{ $settings['meta_description'] ?? 'সরাসরি নিজস্ব কারখানা থেকে প্রিমিয়াম কোয়ালিটির সুইং চেয়ার (দোলনা), বেবি কট, মেটাল বেড এবং কিচেন ট্রলি।' }}">
-  <meta name="keywords" content="{{ $settings['meta_keywords'] ?? 'AR Metal BD, Swing Chair, Dolna, দোলনা, সুইং চেয়ার, Baby Cot' }}">
-  <meta name="theme-color" content="#00804f">
-
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="{{ $settings['site_title'] ?? 'AR Metal BD' }}">
-  <meta property="og:description" content="{{ $settings['meta_description'] ?? '' }}">
-  <meta property="og:image" content="{{ \App\Models\Setting::imageUrl($settings['meta_image']) }}">
-  <meta property="og:url" content="{{ url('/') }}">
+  @include('seo.meta')
+  <link rel="preload" as="image" href="{{ \App\Models\Setting::imageUrl($settings['hero_image']) }}" fetchpriority="high">
 
   <!-- Favicon -->
   <link rel="shortcut icon" href="{{ \App\Models\Setting::imageUrl($settings['favicon']) }}">
@@ -33,75 +23,16 @@
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="{{ asset('css/style.css') }}?v={{ filemtime(public_path('css/style.css')) }}">
 
-  <!-- Facebook Meta Pixel Code (Dynamic) -->
-  @if(!empty($settings['facebook_pixel_id']))
-  <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '{{ $settings['facebook_pixel_id'] }}');
-    fbq('track', 'PageView');
-  </script>
-  <noscript>
-    <img height="1" width="1" style="display:none" 
-         src="https://www.facebook.com/tr?id={{ $settings['facebook_pixel_id'] }}&ev=PageView&noscript=1"/>
-  </noscript>
-  @endif
+  @include('partials.meta-pixel')
 </head>
 <body>
 @php
   $lines = fn ($text) => array_values(array_filter(array_map('trim', preg_split('/\R/', (string) $text))));
   $img = fn ($key) => \App\Models\Setting::imageUrl($settings[$key]);
-  $brandParts = preg_split('/\s+/', trim($settings['brand_name']), 2);
-  $whatsappNumber = $settings['whatsapp'];
-  $phone = $settings['phone'];
+
 @endphp
 
-  <!-- Top Announcement Bar -->
-  <aside class="top-bar" aria-label="Announcement">
-    <div class="container">
-      <div class="top-info">
-        <a href="tel:{{ $settings['phone'] ?? '01805962220' }}"><i class="fa-solid fa-phone-volume"></i> {{ $settings['phone'] ?? '01805962220' }}</a>
-        <a href="https://api.whatsapp.com/send?phone={{ $settings['whatsapp'] ?? '8801805962220' }}" target="_blank"><i class="fa-brands fa-whatsapp"></i> হোয়াটসঅ্যাপে মেসেজ দিন</a>
-        <span><i class="fa-solid fa-location-dot"></i> {{ $settings['address'] ?? 'মিরপুর, কালশী কবরস্থান, ঢাকা-১২১৬' }}</span>
-      </div>
-      <div>
-        @if($settings['topbar_badge'] !== '')<span class="top-badge"><i class="fa-solid fa-truck-fast"></i> {{ $settings['topbar_badge'] }}</span>@endif
-      </div>
-    </div>
-  </aside>
-
-  <!-- Sticky Site Header -->
-  <header class="site-header">
-    <div class="container">
-      <a href="{{ url('/') }}" class="brand-logo">
-        <img src="{{ $img('logo') }}" alt="{{ $settings['brand_name'] }}">
-        <div class="brand-text">
-          <span class="brand-name">{{ $brandParts[0] }}@if(!empty($brandParts[1])) <span>{{ $brandParts[1] }}</span>@endif</span>
-          <span class="brand-tagline">{{ $settings['brand_tagline'] }}</span>
-        </div>
-      </a>
-
-      <div class="header-actions">
-        <a href="tel:{{ $settings['phone'] ?? '01805962220' }}" class="call-pill d-none-sm">
-          <i class="fa-solid fa-phone"></i> {{ $settings['phone'] ?? '০১৮০৫৯৬২২২০' }}
-        </a>
-        <a href="#checkoutSection" class="cart-icon-btn">
-          <i class="fa-solid fa-cart-shopping"></i>
-          <span>অর্ডার লিস্ট</span>
-          <span class="cart-badge" id="headerCartCount">0</span>
-        </a>
-        <a href="#checkoutSection" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem;">
-          <i class="fa-solid fa-bolt"></i> অর্ডার করুন
-        </a>
-      </div>
-    </div>
-  </header>
+  @include('partials.site-header')
 
   <main>
     <!-- Hero Section -->
@@ -144,7 +75,7 @@
                 <span>{{ $settings['hero_badge'] }}</span>
               </div>
               @endif
-              <img src="{{ $img('hero_image') }}" alt="{{ $settings['hero_card_title'] }}">
+              <img src="{{ $img('hero_image') }}" alt="{{ $settings['hero_card_title'] }}" fetchpriority="high" decoding="async">
               <div class="hero-card-bottom">
                 <div>
                   <h3 class="hero-card-title">{{ $settings['hero_card_title'] }}</h3>
@@ -246,7 +177,7 @@
 
           <div class="spotlight-gallery">
             <div class="spotlight-gallery-card">
-              <img src="{{ $img('spotlight_image') }}" alt="{{ $settings['spotlight_title'] }}">
+              <img src="{{ $img('spotlight_image') }}" alt="{{ $settings['spotlight_title'] }}" loading="lazy" decoding="async">
             </div>
           </div>
         </div>
@@ -451,99 +382,7 @@
     @endif
   </main>
 
-  <!-- Site Footer -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div>
-          <div class="footer-logo">
-            <img src="{{ $img('logo') }}" alt="{{ $settings['brand_name'] }}">
-            <span class="footer-brand-title">{{ $settings['brand_name'] }}</span>
-          </div>
-          <p class="footer-desc">{{ $settings['footer_desc'] }}</p>
-          <div class="footer-contact-list">
-            @if($phone !== '')
-            <div class="footer-contact-item">
-              <i class="fa-solid fa-phone"></i>
-              <span>হেল্পলাইন: {{ $phone }}</span>
-            </div>
-            @endif
-            @if($settings['email'] !== '')
-            <div class="footer-contact-item">
-              <i class="fa-solid fa-envelope"></i>
-              <span>ইমেইল: {{ $settings['email'] }}</span>
-            </div>
-            @endif
-            @if($settings['address'] !== '')
-            <div class="footer-contact-item">
-              <i class="fa-solid fa-location-dot"></i>
-              <span>ঠিকানা: {{ $settings['address'] }}</span>
-            </div>
-            @endif
-          </div>
-        </div>
-
-        <div>
-          <h4 class="footer-heading">কুইক লিংক</h4>
-          <ul class="footer-links">
-            @foreach($categories as $cat)
-            <li><a href="#productsSection" onclick="filterProducts('{{ $cat->slug }}')">{{ $cat->name }}</a></li>
-            @endforeach
-            <li><a href="{{ route('login') }}"><i class="fa-solid fa-lock"></i> অ্যাডমিন লগইন</a></li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 class="footer-heading">কাস্টমার সাপোর্ট</h4>
-          <ul class="footer-links">
-            @if($whatsappNumber !== '')
-            <li><a href="https://api.whatsapp.com/send?phone={{ $whatsappNumber }}" target="_blank" rel="noopener">হোয়াটসঅ্যাপ চ্যাট সাপোর্ট</a></li>
-            @endif
-            @if($settings['facebook_url'] !== '')
-            <li><a href="{{ $settings['facebook_url'] }}" target="_blank" rel="noopener">অফিসিয়াল ফেসবুক পেজ</a></li>
-            @endif
-            @if($settings['instagram_url'] !== '')
-            <li><a href="{{ $settings['instagram_url'] }}" target="_blank" rel="noopener">ইনস্টাগ্রাম</a></li>
-            @endif
-            @if($settings['youtube_url'] !== '')
-            <li><a href="{{ $settings['youtube_url'] }}" target="_blank" rel="noopener">ইউটিউব চ্যানেল</a></li>
-            @endif
-            @if($settings['tiktok_url'] !== '')
-            <li><a href="{{ $settings['tiktok_url'] }}" target="_blank" rel="noopener">টিকটক</a></li>
-            @endif
-            @if($phone !== '')
-            <li><a href="tel:{{ $phone }}">সরাসরি কল সেন্টার</a></li>
-            @endif
-            <li><a href="#checkoutSection">ক্যাশ অন ডেলিভারি পলিসি</a></li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="footer-bottom">
-        <div>{{ $settings['footer_copyright'] }}</div>
-        <div>
-          <a href="{{ route('login') }}" style="color: #64748b; font-size: 0.8rem;"><i class="fa-solid fa-shield"></i> Staff Portal</a>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <!-- Sticky Mobile Bottom Action Bar -->
-  <div class="mobile-bottom-bar">
-    <a href="tel:{{ $settings['phone'] ?? '01805962220' }}" class="mobile-bar-btn mobile-bar-call">
-      <i class="fa-solid fa-phone"></i> কল করুন
-    </a>
-    <a href="#checkoutSection" class="mobile-bar-btn mobile-bar-order">
-      <i class="fa-solid fa-bolt"></i> সরাসরি অর্ডার করুন
-    </a>
-  </div>
-
-  <!-- Floating WhatsApp Button -->
-  <div class="floating-actions">
-    <a href="https://api.whatsapp.com/send?phone={{ $settings['whatsapp'] ?? '8801805962220' }}" target="_blank" class="float-btn float-whatsapp" title="WhatsApp Chat">
-      <i class="fa-brands fa-whatsapp"></i>
-    </a>
-  </div>
+  @include('partials.site-footer')
 
   <!-- Quick View Modal -->
   <div class="modal-overlay pv-overlay" id="quickViewModal" onclick="if(event.target===this) closeModal('quickViewModal')">

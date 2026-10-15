@@ -8,8 +8,11 @@ let deliveryCharge = (window.STORE_CONFIG && window.STORE_CONFIG.insideCharge) ?
 let currentCategory = 'all';
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Pre-select first product if available
-  const firstInStock = (window.PRODUCTS_DATA || []).find(p => p.stock > 0);
+  // Pre-select a product: the one chosen on its product page (?buy=ID), otherwise the first one in stock
+  const products = window.PRODUCTS_DATA || [];
+  const buyId = parseInt(new URLSearchParams(window.location.search).get('buy'), 10);
+  const chosen = products.find(p => p.id === buyId && p.stock > 0);
+  const firstInStock = chosen || products.find(p => p.stock > 0);
   if (firstInStock) {
     cart.push({ ...firstInStock, qty: 1 });
   }
@@ -18,6 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
   updateOrderSummary();
   initFaqAccordion();
   initIncompleteOrderCapture();
+
+  if (chosen) {
+    trackPixelAddToCart(chosen);
+    history.replaceState(null, '', window.location.pathname + '#checkoutSection'); // keep the address clean and shareable
+    // Wait for the page to finish loading: images still arriving would otherwise move the form after we scrolled.
+    window.addEventListener('load', () => {
+      document.getElementById('checkoutSection')?.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }, { once: true });
+  }
 });
 
 // Escape text before injecting it into innerHTML
@@ -132,7 +144,7 @@ function renderProducts(filter = 'all') {
         </div>
 
         <div class="card-img-wrap">
-          <img src="${esc(product.image)}" alt="${esc(product.name)}" loading="lazy">
+          <a href="${esc(product.url)}" tabindex="-1" aria-hidden="true"><img src="${esc(product.image)}" alt="${esc(product.name)}" loading="lazy"></a>
           <div class="card-quick-actions">
             <button class="quick-btn" title="কুইক ভিউ" onclick="openQuickView(${product.id})">
               <i class="fa-solid fa-eye"></i>
@@ -146,7 +158,7 @@ function renderProducts(filter = 'all') {
             <span>(${product.reviews || 20} রিভিউ)</span>
           </div>
 
-          <h3 class="card-title">${esc(product.name)}</h3>
+          <h3 class="card-title"><a href="${esc(product.url)}">${esc(product.name)}</a></h3>
           <p class="card-desc">${esc(product.shortDesc)}</p>
 
           <ul class="card-specs-list">
@@ -435,6 +447,7 @@ function openQuickView(id) {
           ${product.discount ? `<span class="badge badge-discount">${esc(product.discount)}</span>` : ''}
         </div>
         ${saving ? `<div class="pv-saving"><i class="fa-solid fa-tag"></i> আপনার সাশ্রয়: ${formatBDT(saving)}</div>` : ''}
+        <a class="pv-detail-link" href="${esc(product.url)}"><i class="fa-solid fa-arrow-up-right-from-square"></i> পূর্ণ বিবরণ ও ছবি আলাদা পেজে দেখুন</a>
 
         <div class="pv-trust">
           <div class="pv-trust-item"><i class="fa-solid fa-hand-holding-dollar"></i>পণ্য হাতে পেয়ে টাকা দিন (ক্যাশ অন ডেলিভারি)</div>

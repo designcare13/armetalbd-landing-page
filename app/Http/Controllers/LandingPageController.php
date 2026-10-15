@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\Setting;
+use App\Support\Seo;
 use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +37,7 @@ class LandingPageController extends Controller
                 'price' => (float) $p->price,
                 'oldPrice' => $p->old_price ? (float) $p->old_price : null,
                 'discount' => $p->discount_label,
+                'url' => route('products.show', $p->slug),
                 'image' => $p->image_url,
                 'rating' => (float) $p->rating,
                 'reviews' => (int) $p->reviews_count,
@@ -47,7 +49,9 @@ class LandingPageController extends Controller
             ];
         });
 
-        return view('landing', compact('categories', 'products', 'productsFormatted', 'settings', 'reviews', 'faqs'));
+        $seo = Seo::landing($settings, $products);
+
+        return view('landing', compact('categories', 'products', 'productsFormatted', 'settings', 'reviews', 'faqs', 'seo'));
     }
 
     public function order(Request $request)

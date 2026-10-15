@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Category;
 use App\Models\IncompleteOrder;
+use App\Models\Product;
 use App\Models\Setting;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
@@ -27,6 +29,13 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer(['admin.layout', 'auth.layout'], function ($view): void {
             $view->with('site', Setting::allWithDefaults());
+        });
+
+        View::composer('partials.site-footer', function ($view): void {
+            $view->with([
+                'footerCategories' => Category::where('is_active', true)->orderBy('sort_order')->get(['name', 'slug']),
+                'footerProducts' => Product::where('is_active', true)->orderBy('id')->get(['id', 'name', 'slug']),
+            ]);
         });
 
         View::composer('admin.layout', function ($view): void {

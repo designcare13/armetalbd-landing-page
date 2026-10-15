@@ -202,13 +202,13 @@ return [
             'fields' => [
                 'site_title' => ['label' => 'সাইট ও এসইও মেটা টাইটেল', 'type' => 'text', 'default' => 'AR Metal BD — প্রিমিয়াম সুইং চেয়ার (দোলনা) ও মেটাল ফার্নিচার', 'rules' => 'nullable|string|max:255'],
                 'meta_description' => ['label' => 'মেটা ডেসক্রিপশন (১৫০-১৬০ অক্ষর ভালো)', 'type' => 'textarea', 'default' => 'সরাসরি নিজস্ব কারখানা থেকে প্রিমিয়াম কোয়ালিটির সুইং চেয়ার (দোলনা), বেবি কট, মেটাল বেড এবং কিচেন ট্রলি। সারাদেশে ক্যাশ অন ডেলিভারি!', 'rules' => 'nullable|string|max:500'],
-                'meta_keywords' => ['label' => 'মেটা কি-ওয়ার্ডস (কমা দিয়ে আলাদা করুন)', 'type' => 'text', 'default' => 'AR Metal BD, Swing Chair, Dolna, দোলনা, সুইং চেয়ার, Baby Cot, Metal Bed, Kitchen Trolley', 'rules' => 'nullable|string|max:500'],
                 'meta_image' => [
                     'label' => 'সোশ্যাল শেয়ার ইমেজ (Open Graph)', 'type' => 'image',
                     'default' => 'https://armetalbd.com/uploads/1000077471_1772519549643_rj8kri.jpg',
                     'rules' => $imageRules.'|dimensions:min_width=200,min_height=200,max_width=5000,max_height=5000',
                     'hint' => 'JPG, PNG বা WEBP • সর্বোচ্চ ২ MB • ফেসবুক শেয়ারের জন্য ১২০০×৬৩০ ভালো',
                 ],
+                'site_url' => ['label' => 'ওয়েবসাইটের মূল ঠিকানা (সার্চ ইঞ্জিনের জন্য)', 'type' => 'text', 'default' => '', 'rules' => 'nullable|url:http,https|max:255', 'hint' => 'যেমন: https://dolna.armetalbd.com। সাইটটি একাধিক ঠিকানায় খুললে এখানে মূল ঠিকানাটা দিন, তাহলে Google সেটাকেই আসল ধরবে। খালি রাখলে যে ঠিকানায় সাইট খোলা হয়েছে সেটাই ধরা হবে। শেষে স্ল্যাশ দেবেন না।'],
                 'facebook_pixel_id' => ['label' => 'ফেসবুক পিক্সেল আইডি', 'type' => 'text', 'default' => '', 'rules' => ['nullable', 'regex:/^[0-9]{8,20}$/'], 'hint' => 'শুধু সংখ্যা (৮-২০ ডিজিট)। খালি রাখলে পিক্সেল লোড হবে না।'],
             ],
         ],

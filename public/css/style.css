@@ -2437,3 +2437,378 @@ button, input, select, textarea {
   from { opacity: 0; transform: translateY(-12px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ================= Product page (SEO landing for each product) ================= */
+.pp-main {
+  padding: 28px 0 64px;
+  background: var(--gray-soft);
+}
+
+.pp-breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--gray);
+  margin-bottom: 18px;
+}
+
+.pp-breadcrumb li + li::before {
+  content: '/';
+  margin-right: 8px;
+  color: var(--gray-light);
+}
+
+.pp-breadcrumb a {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.pp-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-md);
+}
+
+@media (min-width: 900px) {
+  .pp-layout {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 40px;
+    padding: 32px;
+  }
+}
+
+.pp-media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--gray-soft);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pp-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.pp-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  background: var(--warning);
+  color: var(--dark);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+}
+
+.pp-title {
+  font-size: clamp(1.4rem, 3.4vw, 2rem);
+  line-height: 1.3;
+  font-weight: 700;
+  margin: 10px 0 12px;
+}
+
+.pp-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.pp-meta .card-stars {
+  margin-bottom: 0;
+}
+
+.pp-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 3px 12px;
+  border-radius: var(--radius-full);
+}
+
+.pp-stock.in { background: var(--primary-light); color: var(--primary-dark); }
+.pp-stock.out { background: #fee2e2; color: #b91c1c; }
+
+.pp-price-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.pp-price-row .price-current {
+  font-size: 2.1rem;
+  line-height: 1.1;
+}
+
+.pp-price-row .price-old {
+  font-size: 1.1rem;
+}
+
+.pp-price-row .badge {
+  align-self: center;
+}
+
+.pp-saving {
+  color: var(--primary-dark);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 14px;
+}
+
+.pp-lead {
+  color: var(--gray-dark);
+  line-height: 1.75;
+  white-space: pre-line;
+  margin: 12px 0 18px;
+}
+
+.pp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.pp-actions .btn-primary {
+  flex: 1 1 220px;
+}
+
+.pp-disabled {
+  background: var(--gray-light);
+  color: var(--gray);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.pp-trust {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  background: var(--gray-soft);
+  border: 1px solid var(--gray-light);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  color: var(--gray-dark);
+}
+
+.pp-trust i {
+  color: var(--primary);
+  width: 22px;
+  text-align: center;
+}
+
+.pp-section {
+  margin-top: 28px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 900px) {
+  .pp-section {
+    padding: 30px 32px;
+  }
+}
+
+.pp-heading {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.pp-text {
+  color: var(--gray-dark);
+  line-height: 1.85;
+  white-space: pre-line;
+}
+
+.pp-specs {
+  border: 1px solid var(--gray-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.pp-spec-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 34%) 1fr;
+}
+
+.pp-spec-row:nth-child(odd),
+.pp-spec-note:nth-child(odd) {
+  background: var(--gray-soft);
+}
+
+.pp-spec-key {
+  padding: 10px 14px;
+  font-weight: 600;
+  color: var(--gray-dark);
+}
+
+.pp-spec-val {
+  padding: 10px 14px;
+}
+
+.pp-spec-note {
+  padding: 10px 14px;
+  color: var(--gray-dark);
+}
+
+.pp-spec-note i {
+  color: var(--primary);
+  margin-right: 6px;
+}
+
+.pp-related {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .pp-related {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+  }
+}
+
+.pp-related-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: inherit;
+  border: 1px solid var(--gray-light);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  transition: var(--transition);
+}
+
+.pp-related-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.pp-related-card img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  background: var(--gray-soft);
+  border-radius: var(--radius-sm);
+}
+
+.pp-related-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.pp-related-price {
+  color: var(--primary);
+  font-weight: 700;
+  font-family: var(--font-en);
+}
+
+/* Footer: crawlable list of every product page */
+.footer-products {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.footer-product-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 0.85rem;
+}
+
+.footer-product-list a {
+  color: #94a3b8;
+}
+
+.footer-product-list a:hover {
+  color: var(--white);
+}
+
+/* Product cards and the popup link to the product page */
+.card-title a,
+.card-img-wrap > a {
+  color: inherit;
+}
+
+.card-img-wrap > a {
+  display: block;
+}
+
+.card-title a:hover {
+  color: var(--primary);
+}
+
+.pv-detail-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Jumping to a section must not hide its title under the sticky header */
+[id$="Section"] {
+  scroll-margin-top: 90px;
+}
+
+/* Phones: keep the brand name on one line by trimming what sits next to it in the header */
+@media (max-width: 575px) {
+  .site-header .container {
+    gap: 8px;
+  }
+
+  .brand-name {
+    white-space: nowrap;
+    font-size: 1.2rem;
+  }
+
+  .brand-tagline,
+  .cart-icon-btn > span:not(.cart-badge) {
+    display: none;
+  }
+
+  .brand-logo {
+    gap: 8px;
+  }
+
+  .brand-logo img {
+    height: 40px;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  /* The sticky bar at the bottom of the screen already carries the order button on phones */
+  .header-actions .btn {
+    display: none;
+  }
+}
