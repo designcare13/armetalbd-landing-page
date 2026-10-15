@@ -8,6 +8,7 @@ use App\Models\Setting;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SettingController extends Controller
 {
@@ -27,17 +28,19 @@ class SettingController extends Controller
 
         $validated = $request->validate($this->rules($fields), $this->messages($fields));
 
-        foreach ($fields as $key => $field) {
-            if ($field['type'] === 'image') {
-                $this->saveImageField($request, $key);
+        DB::transaction(function () use ($fields, $request, $validated): void {
+            foreach ($fields as $key => $field) {
+                if ($field['type'] === 'image') {
+                    $this->saveImageField($request, $key);
 
-                continue;
-            }
+                    continue;
+                }
 
-            if (array_key_exists($key, $validated)) {
-                Setting::set($key, $this->normalize($field, $validated[$key]));
+                if (array_key_exists($key, $validated)) {
+                    Setting::set($key, $this->normalize($field, $validated[$key]));
+                }
             }
-        }
+        });
 
         return back()->with('success', 'সেটিংস সফলভাবে আপডেট করা হয়েছে।');
     }
@@ -99,7 +102,7 @@ class SettingController extends Controller
         $current = Setting::get($key);
 
         if ($request->hasFile($key)) {
-            Setting::set($key, $this->storeImage($request->file($key), 'site'));
+            Setting::set($key, $this->storeImage($request->file($key), 'site', field: $key));
             Setting::deleteImage($current);
 
             return;

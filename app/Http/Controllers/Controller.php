@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use League\Flysystem\FilesystemException;
+use RuntimeException;
 
 abstract class Controller
 {
@@ -27,20 +30,40 @@ abstract class Controller
      *
      * When $maxSide is given and the photo is larger, it is scaled down so its longer side
      * equals $maxSide. This keeps phone photos light without asking the admin to resize them.
+     *
+     * When the server cannot write the file (folder permissions, full disk) the admin gets an error
+     * on $field instead of a blank server error page.
+     *
+     * @throws ValidationException
      */
-    protected function storeImage(UploadedFile $file, string $directory, ?int $maxSide = null): string
+    protected function storeImage(UploadedFile $file, string $directory, ?int $maxSide = null, string $field = 'image'): string
     {
         $disk = config('landing.image_disk');
         $resized = $maxSide !== null ? $this->downscaledImage($file, $maxSide) : null;
 
-        if ($resized === null) {
-            return $file->store($directory, $disk);
+        $failure = null;
+
+        try {
+            if ($resized === null) {
+                $stored = $file->store($directory, $disk);
+            } else {
+                $stored = $directory.'/'.Str::random(40).'.'.$resized['extension'];
+                $stored = Storage::disk($disk)->put($stored, $resized['contents'], 'public') ? $stored : false;
+            }
+        } catch (FilesystemException $exception) {
+            $stored = false;
+            $failure = $exception;
         }
 
-        $path = $directory.'/'.Str::random(40).'.'.$resized['extension'];
-        Storage::disk($disk)->put($path, $resized['contents'], 'public');
+        if (! is_string($stored) || $stored === '') {
+            report($failure ?? new RuntimeException("Could not write the uploaded image to the '{$disk}' disk, folder '{$directory}'. Check that public/uploads/{$directory} exists and is writable."));
 
-        return $path;
+            throw ValidationException::withMessages([
+                $field => 'ছবিটি সার্ভারে সেভ করা যায়নি। ছবির ফোল্ডারের অনুমতি বা সার্ভারের জায়গা পরীক্ষা করুন।',
+            ]);
+        }
+
+        return $stored;
     }
 
     /**
