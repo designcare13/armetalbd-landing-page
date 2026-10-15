@@ -22,7 +22,7 @@
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="{{ asset('css/style.css') }}?v={{ filemtime(public_path('css/style.css')) }}">
 
-  @include('partials.meta-pixel')
+  @include('partials.tracking')
 </head>
 <body>
   @include('partials.site-header', ['anchor' => route('home'), 'orderUrl' => $orderUrl])
@@ -135,21 +135,16 @@
 
   @include('partials.site-footer', ['anchor' => route('home'), 'orderUrl' => $orderUrl])
 
-  @if(!empty($settings['facebook_pixel_id']))
   @php
     $viewContent = [
       'content_name' => $product->name,
-      'content_ids' => [$product->id],
+      'content_ids' => [(string) $product->id],
       'content_type' => 'product',
+      'contents' => [['id' => (string) $product->id, 'quantity' => 1, 'item_price' => (float) $product->price]],
       'value' => (float) $product->price,
       'currency' => 'BDT',
     ];
   @endphp
-  <script>
-    if (typeof fbq === 'function') {
-      fbq('track', 'ViewContent', @json($viewContent));
-    }
-  </script>
-  @endif
+  <script>if (window.ArmTracking) { ArmTracking.track('ViewContent', @json($viewContent)); }</script>
 </body>
 </html>

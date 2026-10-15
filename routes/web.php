@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\TrackingController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -69,6 +70,11 @@ Route::middleware('auth')->prefix('admin')->group(function () {
     Route::delete('/incomplete-orders/{incompleteOrder}', [AdminIncompleteOrderController::class, 'destroy'])->name('admin.incomplete-orders.destroy');
     Route::get('/incomplete-orders/{incompleteOrder}/order', [IncompleteOrderConversionController::class, 'create'])->name('admin.incomplete-orders.convert');
     Route::post('/incomplete-orders/{incompleteOrder}/order', [IncompleteOrderConversionController::class, 'store'])->name('admin.incomplete-orders.convert.store');
+
+    // Tracking: Meta Conversions API and campaign results
+    Route::get('/tracking', [TrackingController::class, 'index'])->name('admin.tracking.index');
+    Route::put('/tracking', [TrackingController::class, 'update'])->name('admin.tracking.update');
+    Route::post('/tracking/test', [TrackingController::class, 'test'])->name('admin.tracking.test');
 
     // Products Management
     Route::resource('products', ProductController::class)->except('show')->names('admin.products');

@@ -7,10 +7,12 @@ use App\Models\IncompleteOrder;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Support\MetaTracker;
 use DomainException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -65,7 +67,7 @@ class IncompleteOrderConversionController extends Controller
         try {
             $order = DB::transaction(function () use ($validated, $lines, $incompleteOrder): Order {
                 // The customer already confirmed by phone, so the order starts as confirmed.
-                $order = Order::place($validated, $lines, 'confirmed');
+                $order = Order::place($validated, $lines, 'confirmed', Arr::only($incompleteOrder->getAttributes(), Order::ATTRIBUTION_KEYS));
 
                 IncompleteOrder::discardForOrder($incompleteOrder->visitor_token, $validated['customer_phone']);
                 $incompleteOrder->delete();
@@ -75,6 +77,11 @@ class IncompleteOrderConversionController extends Controller
         } catch (DomainException $e) {
             throw ValidationException::withMessages(['items' => $e->getMessage()]);
         }
+
+        // The sale happened on the phone, so there is no browser event: Meta only hears about it from here.
+        $tracker = app(MetaTracker::class);
+        $tracker->purchase($order, [], byPhone: true);
+        $tracker->orderConfirmed($order);
 
         return redirect()->route('admin.orders.show', $order)
             ->with('success', "অর্ডার {$order->order_number} সফলভাবে তৈরি হয়েছে এবং কনফার্মড করা হয়েছে।");

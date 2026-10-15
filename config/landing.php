@@ -210,6 +210,8 @@ return [
                 ],
                 'site_url' => ['label' => 'ওয়েবসাইটের মূল ঠিকানা (সার্চ ইঞ্জিনের জন্য)', 'type' => 'text', 'default' => '', 'rules' => 'nullable|url:http,https|max:255', 'hint' => 'যেমন: https://dolna.armetalbd.com। সাইটটি একাধিক ঠিকানায় খুললে এখানে মূল ঠিকানাটা দিন, তাহলে Google সেটাকেই আসল ধরবে। খালি রাখলে যে ঠিকানায় সাইট খোলা হয়েছে সেটাই ধরা হবে। শেষে স্ল্যাশ দেবেন না।'],
                 'facebook_pixel_id' => ['label' => 'ফেসবুক পিক্সেল আইডি', 'type' => 'text', 'default' => '', 'rules' => ['nullable', 'regex:/^[0-9]{8,20}$/'], 'hint' => 'শুধু সংখ্যা (৮-২০ ডিজিট)। খালি রাখলে পিক্সেল লোড হবে না।'],
+                'google_analytics_id' => ['label' => 'Google Analytics আইডি (GA4)', 'type' => 'text', 'default' => '', 'rules' => ['nullable', 'regex:/^G-[A-Z0-9]{6,15}$/'], 'hint' => 'যেমন: G-ABC123XYZ9। খালি রাখলে Analytics লোড হবে না।'],
+                'clarity_project_id' => ['label' => 'Microsoft Clarity প্রজেক্ট আইডি', 'type' => 'text', 'default' => '', 'rules' => ['nullable', 'regex:/^[a-z0-9]{6,20}$/'], 'hint' => 'ক্লিক ম্যাপ ও রেকর্ডিং দেখার জন্য। খালি রাখলে লোড হবে না।'],
             ],
         ],
 

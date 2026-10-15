@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\IncompleteOrder;
 use App\Models\Order;
 use App\Models\Product;
+use App\Support\MetaTracker;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
@@ -50,7 +51,12 @@ class IncompleteOrderController extends Controller
             'items' => $items,
             'cart_total' => collect($items)->sum(fn (array $item): float => $item['price'] * $item['qty']),
             'last_captured_at' => now(),
-        ])->save();
+        ] + array_filter(MetaTracker::clientData($request)))->save();
+
+        // One Lead per visitor: the first time a valid phone number is saved. The browser sends the same event.
+        if ($incompleteOrder->wasRecentlyCreated) {
+            app(MetaTracker::class)->lead($incompleteOrder, MetaTracker::requestContext($request));
+        }
 
         // Cleanup runs here so the retention promise does not depend on a server cron job.
         if (random_int(1, 50) === 1) {

@@ -2,13 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 
 class Setting extends Model
 {
     use HasFactory;
+
+    /**
+     * Stored encrypted and never part of allWithDefaults(), so they cannot leak into a view by accident.
+     *
+     * @var array<int, string>
+     */
+    public const SECRET_KEYS = ['meta_capi_token'];
 
     protected $fillable = ['key', 'value'];
 
@@ -24,6 +34,29 @@ class Setting extends Model
         static::updateOrCreate(['key' => $key], ['value' => $value]);
     }
 
+    public static function setSecret(string $key, ?string $value): void
+    {
+        static::set($key, blank($value) ? '' : Crypt::encryptString($value));
+    }
+
+    /**
+     * The decrypted secret, or null when it is missing or was saved under a different app key.
+     */
+    public static function secret(string $key): ?string
+    {
+        $stored = static::get($key);
+
+        if (blank($stored)) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($stored);
+        } catch (DecryptException) {
+            return null;
+        }
+    }
+
     /**
      * Every landing-page setting: schema defaults overridden by saved values.
      *
@@ -31,7 +64,7 @@ class Setting extends Model
      */
     public static function allWithDefaults(): array
     {
-        $values = static::query()->pluck('value', 'key')->all();
+        $values = Arr::except(static::query()->pluck('value', 'key')->all(), self::SECRET_KEYS);
         $merged = [];
 
         foreach (static::schemaFields() as $key => $field) {

@@ -3,6 +3,15 @@
  * Database-backed Products, Real-time Multi-Product Cart & Checkout, Meta Pixel Tracking
  */
 
+// Ad blockers can stop the shared helper script from loading. The page must keep working without it.
+window.ArmTracking = window.ArmTracking || {
+  visitorToken: () => null,
+  clientPayload: () => ({}),
+  fbp: () => '',
+  fbc: () => '',
+  track: () => {},
+};
+
 let cart = [];
 let deliveryCharge = (window.STORE_CONFIG && window.STORE_CONFIG.insideCharge) ? window.STORE_CONFIG.insideCharge : 150;
 let currentCategory = 'all';
@@ -21,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateOrderSummary();
   initFaqAccordion();
   initIncompleteOrderCapture();
+  initCheckoutTracking();
 
   if (chosen) {
     trackPixelAddToCart(chosen);
@@ -519,6 +529,7 @@ function openQuickView(id) {
 
   document.getElementById('quickViewModal').classList.add('open');
   document.body.style.overflow = 'hidden';
+  ArmTracking.track('ViewContent', productEventData(product));
 
   // Offer "আরও দেখুন" only when the description really is cut off (needs the popup to be visible to measure).
   const descEl = content.querySelector('.pv-desc');
@@ -551,47 +562,66 @@ function initFaqAccordion() {
   });
 }
 
-// Meta Pixel tracking helper
+// ---------- Tracking helpers (events go out through the shared ArmTracking script) ----------
+function productEventData(product, quantity = 1) {
+  return {
+    content_name: product.name,
+    content_ids: [String(product.id)],
+    content_type: 'product',
+    contents: [{ id: String(product.id), quantity, item_price: product.price }],
+    value: product.price * quantity,
+    currency: 'BDT'
+  };
+}
+
+function cartEventData() {
+  return {
+    content_ids: cart.map(item => String(item.id)),
+    content_type: 'product',
+    contents: cart.map(item => ({ id: String(item.id), quantity: item.qty, item_price: item.price })),
+    num_items: cart.reduce((sum, item) => sum + item.qty, 0),
+    value: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
+    currency: 'BDT'
+  };
+}
+
 function trackPixelAddToCart(product) {
-  if (typeof fbq === 'function') {
-    fbq('track', 'AddToCart', {
-      content_name: product.name,
-      content_ids: [product.id],
-      content_type: 'product',
-      value: product.price,
-      currency: 'BDT'
-    });
+  ArmTracking.track('AddToCart', productEventData(product));
+}
+
+// InitiateCheckout fires once, the first time the visitor starts filling the order form.
+function initCheckoutTracking() {
+  const form = document.getElementById('orderForm');
+  if (!form) return;
+
+  const onFirstFocus = () => {
+    if (cart.length === 0) return;
+    form.removeEventListener('focusin', onFirstFocus);
+    ArmTracking.track('InitiateCheckout', cartEventData());
+  };
+  form.addEventListener('focusin', onFirstFocus);
+}
+
+// Lead fires once per browser, the first time a valid phone number is saved. The server sends the same event.
+function trackLeadOnce(token) {
+  try {
+    if (localStorage.getItem('arm_lead_tracked')) return;
+    localStorage.setItem('arm_lead_tracked', '1');
+  } catch (error) {
+    return;
   }
+  ArmTracking.track('Lead', cartEventData(), 'lead-' + token);
 }
 
 // ---------- Incomplete order capture ----------
 // Once a valid phone number is typed, the details so far are saved on the server so the team can
 // follow up if the order is never completed. The server removes them as soon as an order is placed.
-const VISITOR_TOKEN_KEY = 'arm_visitor_token';
 let incompleteTimer = null;
 let lastIncompleteBody = '';
 
-function newVisitorToken() {
-  if (window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-// One anonymous id per browser; null when storage is blocked (private mode), in which case nothing is saved.
+// One anonymous id per browser (kept by arm-core.js); null when storage is blocked, in which case nothing is saved.
 function getVisitorToken() {
-  try {
-    let token = localStorage.getItem(VISITOR_TOKEN_KEY);
-    if (!token) {
-      token = newVisitorToken();
-      localStorage.setItem(VISITOR_TOKEN_KEY, token);
-    }
-    return token;
-  } catch (error) {
-    return null;
-  }
+  return window.ArmTracking ? ArmTracking.visitorToken() : null;
 }
 
 function buildIncompletePayload() {
@@ -607,6 +637,7 @@ function buildIncompletePayload() {
     customer_address: (document.getElementById('customerAddress')?.value || '').trim(),
     delivery_area: areaInput ? areaInput.value : null,
     items: cart.map(item => ({ id: item.id, qty: item.qty })),
+    ...ArmTracking.clientPayload(),
   };
 }
 
@@ -618,6 +649,7 @@ function sendIncompleteOrder() {
   const body = JSON.stringify(payload);
   if (body === lastIncompleteBody) return;
   lastIncompleteBody = body;
+  trackLeadOnce(payload.visitor_token);
 
   fetch(window.STORE_CONFIG.incompleteUrl, {
     method: 'POST',
@@ -697,7 +729,8 @@ async function handleOrderSubmit(event) {
     delivery_area: deliveryArea,
     order_note: note,
     visitor_token: getVisitorToken(),
-    items: cart.map(i => ({ id: i.id, qty: i.qty }))
+    items: cart.map(i => ({ id: i.id, qty: i.qty })),
+    ...ArmTracking.clientPayload()
   };
 
   try {
@@ -730,9 +763,9 @@ async function handleOrderSubmit(event) {
       return;
     }
 
-    // Trigger Meta Pixel Purchase Event
-    if (typeof fbq === 'function' && result.pixel_purchase_payload) {
-      fbq('track', 'Purchase', result.pixel_purchase_payload);
+    // The server sends this same Purchase to Meta with the same id, so it is counted once.
+    if (result.pixel_purchase_payload) {
+      ArmTracking.track('Purchase', result.pixel_purchase_payload, result.event_id);
     }
 
     // Populate Success Modal

@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\Setting;
+use App\Support\MetaTracker;
 use App\Support\Seo;
 use DomainException;
 use Illuminate\Http\Request;
@@ -77,8 +78,8 @@ class LandingPageController extends Controller
         ]);
 
         try {
-            $order = DB::transaction(function () use ($validated): Order {
-                $order = Order::place($validated, $validated['items']);
+            $order = DB::transaction(function () use ($validated, $request): Order {
+                $order = Order::place($validated, $validated['items'], 'pending', MetaTracker::clientData($request) + ['visitor_token' => $validated['visitor_token'] ?? null]);
 
                 IncompleteOrder::discardForOrder($validated['visitor_token'] ?? null, $validated['customer_phone']);
 
@@ -97,6 +98,9 @@ class LandingPageController extends Controller
                 'message' => 'অর্ডার প্রসেস করার সময় সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।',
             ], 500);
         }
+
+        // Goes to Meta after this response has been sent; the browser sends the same event with the same id.
+        app(MetaTracker::class)->purchase($order, MetaTracker::requestContext($request));
 
         $deliveryCharge = (float) $order->delivery_charge;
         $subtotal = (float) $order->subtotal;
@@ -117,11 +121,19 @@ class LandingPageController extends Controller
             'delivery_charge' => $deliveryCharge,
             'grand_total' => $grandTotal,
             'items_summary' => $order->items->map(fn ($item) => "{$item->product_name} (×{$item->quantity})")->implode(', '),
+            'event_id' => 'purchase-'.$order->id,
             'pixel_purchase_payload' => [
                 'value' => $grandTotal,
                 'currency' => 'BDT',
-                'content_ids' => $order->items->pluck('product_id')->all(),
+                'content_type' => 'product',
+                'content_ids' => $order->items->pluck('product_id')->map(fn ($id): string => (string) $id)->all(),
+                'contents' => $order->items->map(fn ($item): array => [
+                    'id' => (string) $item->product_id,
+                    'quantity' => $item->quantity,
+                    'item_price' => (float) $item->unit_price,
+                ])->all(),
                 'num_items' => $order->items->sum('quantity'),
+                'order_id' => $order->order_number,
             ],
         ]);
     }

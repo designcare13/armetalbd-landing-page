@@ -450,6 +450,13 @@
         </a>
       </li>
 
+      <li class="nav-item {{ request()->routeIs('admin.tracking.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.tracking.index') }}">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>ট্র্যাকিং</span>
+        </a>
+      </li>
+
       <li class="nav-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
         <a href="{{ route('admin.products.index') }}">
           <i class="fa-solid fa-couch"></i>

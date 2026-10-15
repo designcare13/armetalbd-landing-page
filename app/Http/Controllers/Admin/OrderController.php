@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Support\MetaTracker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -44,6 +45,7 @@ class OrderController extends Controller
             'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled',
         ]);
 
+        $previousStatus = $order->status;
         $wasCancelled = $order->status === 'cancelled';
         $isCancelled = $request->status === 'cancelled';
 
@@ -56,6 +58,10 @@ class OrderController extends Controller
 
             $order->update(['status' => $request->status]);
         });
+
+        if ($request->status === 'confirmed' && $previousStatus !== 'confirmed') {
+            app(MetaTracker::class)->orderConfirmed($order->loadMissing('items'));
+        }
 
         $labels = [
             'pending' => 'পেন্ডিং',

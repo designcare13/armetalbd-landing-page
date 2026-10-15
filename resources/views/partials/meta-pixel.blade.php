@@ -9,7 +9,10 @@
     t.src=v;s=b.getElementsByTagName(e)[0];
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '{{ $settings['facebook_pixel_id'] }}');
+    var advancedMatching = {};
+    var visitorId = window.ArmTracking ? window.ArmTracking.visitorToken() : null;
+    if (visitorId) { advancedMatching.external_id = visitorId; }
+    fbq('init', '{{ $settings['facebook_pixel_id'] }}', advancedMatching);
     fbq('track', 'PageView');
   </script>
   <noscript>

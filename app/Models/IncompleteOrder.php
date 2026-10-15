@@ -38,6 +38,14 @@ class IncompleteOrder extends Model
         'cart_total',
         'status',
         'last_captured_at',
+        'fbp',
+        'fbc',
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_content',
+        'utm_term',
+        'referrer',
     ];
 
     protected $casts = [

@@ -23,7 +23,7 @@
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="{{ asset('css/style.css') }}?v={{ filemtime(public_path('css/style.css')) }}">
 
-  @include('partials.meta-pixel')
+  @include('partials.tracking')
 </head>
 <body>
 @php
@@ -239,7 +239,7 @@
 
               <p class="form-privacy-note">
                 <i class="fa-solid fa-shield-halved"></i>
-                আপনার নম্বর দিলে অর্ডার সম্পন্ন না হলেও আমাদের প্রতিনিধি ফোন করে সহায়তা করতে পারেন। আপনার তথ্য গোপন রাখা হবে এবং নির্দিষ্ট সময় পর মুছে ফেলা হবে।
+                আপনার নম্বর দিলে অর্ডার সম্পন্ন না হলেও আমাদের প্রতিনিধি ফোন করে সহায়তা করতে পারেন। বিজ্ঞাপনের ফল মাপতে আপনার অর্ডার ও ফোন নম্বর (কোড করা অবস্থায়) Meta বা Facebook-কে জানানো হতে পারে। আপনার তথ্য গোপন রাখা হবে এবং ইনকমপ্লিট তথ্য নির্দিষ্ট সময় পর মুছে ফেলা হবে।
               </p>
 
               <div class="form-group">

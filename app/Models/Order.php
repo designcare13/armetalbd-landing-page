@@ -6,12 +6,16 @@ use DomainException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Order extends Model
 {
     use HasFactory;
+
+    /** Where the customer came from and the ids Meta needs to match the order to an ad click. */
+    public const ATTRIBUTION_KEYS = ['visitor_token', 'fbp', 'fbc', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'referrer'];
 
     protected $fillable = [
         'order_number',
@@ -25,6 +29,15 @@ class Order extends Model
         'payment_method',
         'order_note',
         'status',
+        'visitor_token',
+        'fbp',
+        'fbc',
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_content',
+        'utm_term',
+        'referrer',
     ];
 
     protected $casts = [
@@ -54,15 +67,16 @@ class Order extends Model
      *
      * @param  array<string, mixed>  $customer  customer_name, customer_phone, customer_address, delivery_area, order_note
      * @param  array<int, array{id: int|string, qty: int|string}>  $lines
+     * @param  array<string, string|null>  $attribution  visitor_token, fbp, fbc, utm_* and referrer; unknown keys are ignored
      *
      * @throws DomainException when stock is short or no line refers to an active product
      */
-    public static function place(array $customer, array $lines, string $status = 'pending'): self
+    public static function place(array $customer, array $lines, string $status = 'pending', array $attribution = []): self
     {
         $settings = Setting::allWithDefaults();
         $deliveryCharge = (float) ($customer['delivery_area'] === 'inside' ? $settings['delivery_inside'] : $settings['delivery_outside']);
 
-        return DB::transaction(function () use ($customer, $lines, $status, $deliveryCharge): self {
+        return DB::transaction(function () use ($customer, $lines, $status, $attribution, $deliveryCharge): self {
             $subtotal = 0;
             $items = [];
 
@@ -103,7 +117,7 @@ class Order extends Model
                 $orderNumber = 'ARM-'.strtoupper(Str::random(3)).'-'.random_int(1000, 9999);
             } while (self::where('order_number', $orderNumber)->exists());
 
-            $order = self::create([
+            $order = self::create(Arr::only($attribution, self::ATTRIBUTION_KEYS) + [
                 'order_number' => $orderNumber,
                 'customer_name' => $customer['customer_name'],
                 'customer_phone' => $customer['customer_phone'],
