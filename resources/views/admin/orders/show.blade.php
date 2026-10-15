@@ -26,9 +26,16 @@
   <!-- Invoice Header -->
   <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--gray-light); padding-bottom: 20px; margin-bottom: 24px;">
     <div>
-      <img src="https://armetalbd.com/uploads/3_1769424079361_u87afs.png" alt="AR Metal Logo" style="height: 48px; margin-bottom: 8px;">
-      <h2 style="font-size: 1.4rem; font-weight: 700;">AR METAL BD</h2>
-      <p style="font-size: 0.85rem; color: #64748b;">মিরপুর, কালশী কবরস্থান, ঢাকা-১২১৬, বাংলাদেশ<br>ফোন: 01805962220 | ইমেইল: arif28391@gmail.com</p>
+      @if(\App\Models\Setting::imageUrl($settings['logo']))
+        <img src="{{ \App\Models\Setting::imageUrl($settings['logo']) }}" alt="{{ $settings['brand_name'] }}" style="height: 48px; margin-bottom: 8px;">
+      @endif
+      <h2 style="font-size: 1.4rem; font-weight: 700;">{{ $settings['brand_name'] }}</h2>
+      <p style="font-size: 0.85rem; color: #64748b;">
+        {{ $settings['address'] }}
+        @if($settings['phone'] !== '' || $settings['email'] !== '')
+          <br>{{ collect([$settings['phone'] !== '' ? 'ফোন: '.$settings['phone'] : null, $settings['email'] !== '' ? 'ইমেইল: '.$settings['email'] : null])->filter()->implode(' | ') }}
+        @endif
+      </p>
     </div>
 
     <div style="text-align: right;">
@@ -127,7 +134,7 @@
         @foreach($order->items as $item)
         <tr>
           <td style="width: 70px;">
-            <img src="{{ $item->product_image ?? 'https://armetalbd.com/preset/fixing1.png' }}" alt="{{ $item->product_name }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
+            <img src="{{ $item->product_image ?: \App\Models\Setting::imageUrl($settings['logo']) }}" alt="{{ $item->product_name }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
           </td>
           <td>
             <strong>{{ $item->product_name }}</strong>

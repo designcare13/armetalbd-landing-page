@@ -120,7 +120,7 @@ class OrderController extends Controller
     {
         $order->load('items.product');
 
-        return view('admin.orders.show', compact('order'));
+        return view('admin.orders.show', ['order' => $order, 'settings' => Setting::allWithDefaults()]);
     }
 
     /**

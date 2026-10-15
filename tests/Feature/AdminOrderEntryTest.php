@@ -378,4 +378,20 @@ class AdminOrderEntryTest extends TestCase
 
         $this->actingAs($this->admin)->get(route('admin.orders.index'))->assertOk()->assertDontSee('class="source-chip"', false);
     }
+
+    public function test_the_invoice_shows_the_shop_details_from_the_settings(): void
+    {
+        Setting::set('brand_name', 'আমার দোকান');
+        Setting::set('address', 'উত্তরা, ঢাকা');
+        Setting::set('phone', '01711111111');
+        Setting::set('email', 'shop@example.com');
+        $order = $this->orderWith(Product::factory()->create(['stock' => 5]), 1);
+
+        $this->actingAs($this->admin)->get(route('admin.orders.show', $order))
+            ->assertOk()
+            ->assertSee('আমার দোকান')
+            ->assertSee('উত্তরা, ঢাকা')
+            ->assertSee('ফোন: 01711111111 | ইমেইল: shop@example.com')
+            ->assertDontSee('কালশী কবরস্থান');
+    }
 }
