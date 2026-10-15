@@ -60,7 +60,11 @@ Route::middleware('auth')->prefix('admin')->group(function () {
 
     // Orders Management
     Route::get('/orders', [OrderController::class, 'index'])->name('admin.orders.index');
+    Route::get('/orders/create', [OrderController::class, 'create'])->name('admin.orders.create');
+    Route::post('/orders', [OrderController::class, 'store'])->name('admin.orders.store');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('admin.orders.show');
+    Route::get('/orders/{order}/edit', [OrderController::class, 'edit'])->name('admin.orders.edit');
+    Route::put('/orders/{order}', [OrderController::class, 'update'])->name('admin.orders.update');
     Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('admin.orders.status');
     Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('admin.orders.destroy');
 

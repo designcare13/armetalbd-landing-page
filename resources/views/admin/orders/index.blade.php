@@ -48,6 +48,7 @@
   .order-table td { vertical-align: top; }
   .order-no { white-space: nowrap; font-family: var(--font-en); font-weight: 700; color: var(--primary); text-decoration: none; font-size: 0.95rem; }
   .order-no:hover { text-decoration: underline; }
+  .source-chip { display: inline-block; margin-left: 4px; padding: 1px 8px; border-radius: 6px; background: #eef2ff; color: #4338ca; font-size: 0.7rem; font-weight: 700; vertical-align: middle; }
   .muted { color: #64748b; font-size: 0.8rem; }
   .nowrap { white-space: nowrap; }
   .faint { color: #94a3b8; font-size: 0.75rem; }
@@ -117,6 +118,12 @@
   </div>
 </div>
 
+<div style="display: flex; justify-content: flex-end; margin-bottom: 14px;">
+  <a href="{{ route('admin.orders.create') }}" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-plus"></i> নতুন অর্ডার যোগ করুন
+  </a>
+</div>
+
 <div class="card">
   <div class="order-filters">
     <div class="filter-pills">
@@ -176,7 +183,11 @@
           <tr>
             <td data-label="অর্ডার">
               <div>
-                <a href="{{ route('admin.orders.show', $order) }}" class="order-no">{{ $order->order_number }}</a><br>
+                <a href="{{ route('admin.orders.show', $order) }}" class="order-no">{{ $order->order_number }}</a>
+                @if($order->source !== 'website')
+                  <span class="source-chip" title="অর্ডারের উৎস">{{ $order->sourceLabel() }}</span>
+                @endif
+                <br>
                 <span class="muted nowrap">{{ $order->created_at->format('d M Y') }}</span><br>
                 <span class="faint nowrap">{{ $order->created_at->format('h:i A') }}</span>
               </div>
