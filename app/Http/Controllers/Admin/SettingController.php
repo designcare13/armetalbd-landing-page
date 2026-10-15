@@ -122,7 +122,8 @@ class SettingController extends Controller
         $value = trim((string) ($value ?? ''));
 
         if ($field['type'] === 'list') {
-            $lines = array_filter(array_map('trim', preg_split('/\R/', $value)));
+            // The u flag matters: without it \R also matches the byte 0x85, which sits inside Bangla letters such as অ.
+            $lines = array_filter(array_map('trim', preg_split('/\R/u', $value) ?: [$value]));
 
             return implode("\n", $lines);
         }
