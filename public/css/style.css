@@ -754,11 +754,14 @@ button, input, select, textarea {
   color: #ffffff;
 }
 
-/* Photos fill a fixed-height frame and are cropped evenly at the edges. */
+/*
+ * Photos fill a portrait frame (4:5) and the edges that do not fit are cropped. The focus sits a little above
+ * the middle, so on tall phone photos the product itself stays in view and the floor below it is what gets cut.
+ */
 .card-img-wrap {
   position: relative;
   width: 100%;
-  height: 270px;
+  aspect-ratio: 4 / 5;
   overflow: hidden;
   background: #f1f5f9;
 }
@@ -773,6 +776,7 @@ button, input, select, textarea {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center 40%;
   display: block;
   transition: transform 0.5s ease;
 }
