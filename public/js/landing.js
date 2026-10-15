@@ -361,51 +361,9 @@ function renderQuickViewSpecs(specs) {
     </section>`;
 }
 
-// Inner zoom: the part of the photo under the pointer is magnified inside the same frame.
+// Inner zoom: the part of the photo under the pointer is magnified inside the same frame (shared with the product page).
 function setupQuickViewZoom(root) {
-  const frame = root.querySelector('.pv-zoom-frame');
-  const img = root.querySelector('.pv-zoom-frame img');
-  const levelEl = root.querySelector('.pv-zoom-level');
-  if (!frame || !img) return;
-
-  let active = false;
-  let scale = 2;
-  let lastPointerType = 'mouse';
-
-  // Never magnify far beyond the real pixels, otherwise the photo turns blurry.
-  const pickScale = () => {
-    const ratio = img.naturalWidth / Math.max(1, img.clientWidth);
-    scale = Math.min(3, Math.max(1.8, ratio));
-    levelEl.textContent = toBanglaDigits(scale.toFixed(1)) + '× জুম' + (ratio < 1.4 ? ' · ছবির মান কম' : '');
-  };
-
-  const moveOrigin = event => {
-    const rect = frame.getBoundingClientRect();
-    const x = Math.min(100, Math.max(0, (event.clientX - rect.left) / rect.width * 100));
-    const y = Math.min(100, Math.max(0, (event.clientY - rect.top) / rect.height * 100));
-    img.style.transformOrigin = `${x}% ${y}%`;
-  };
-
-  const zoomIn = event => {
-    pickScale();
-    active = true;
-    frame.classList.add('is-zooming');
-    moveOrigin(event);
-    img.style.transform = `scale(${scale})`;
-  };
-
-  const zoomOut = () => {
-    active = false;
-    frame.classList.remove('is-zooming');
-    img.style.transform = '';
-  };
-
-  frame.addEventListener('pointerdown', e => { lastPointerType = e.pointerType; });
-  frame.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') zoomIn(e); });
-  frame.addEventListener('pointermove', e => { if (active) moveOrigin(e); });
-  frame.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') zoomOut(); });
-  // Touch screens have no hover: a tap toggles the zoom and dragging pans it.
-  frame.addEventListener('click', e => { if (lastPointerType !== 'mouse') { active ? zoomOut() : zoomIn(e); } });
+  if (window.ArmZoom) window.ArmZoom.init(root);
 }
 
 function openQuickView(id) {

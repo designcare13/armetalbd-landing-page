@@ -45,8 +45,14 @@
 
       <article class="pp-layout">
         <div class="pp-media">
-          @if($product->badge)<span class="pp-badge"><i class="fa-solid fa-fire"></i> {{ $product->badge }}</span>@endif
-          <img src="{{ $product->image_url }}" alt="{{ $product->name }}" fetchpriority="high" decoding="async">
+          <div class="pv-zoom-frame">
+            @if($product->badge)<span class="pp-badge"><i class="fa-solid fa-fire"></i> {{ $product->badge }}</span>@endif
+            <img src="{{ $product->image_url }}" alt="{{ $product->name }}" fetchpriority="high" decoding="async" draggable="false">
+            <span class="pv-zoom-level"></span>
+            <span class="pv-zoom-hint"><i class="fa-solid fa-magnifying-glass-plus"></i>
+              <span class="pv-hint-mouse">জুম দেখতে ছবির উপর মাউস নিন</span><span class="pv-hint-touch">জুম করতে ছবিতে ট্যাপ করুন</span>
+            </span>
+          </div>
         </div>
 
         <div class="pp-info">
@@ -122,9 +128,22 @@
         <div class="pp-related">
           @foreach($related as $item)
           <a href="{{ route('products.show', $item->slug) }}" class="pp-related-card">
-            <img src="{{ $item->image_url }}" alt="{{ $item->name }}" loading="lazy" decoding="async">
-            <span class="pp-related-name">{{ $item->name }}</span>
-            <span class="pp-related-price">৳{{ number_format($item->price) }}</span>
+            <span class="pp-related-media">
+              @if($item->badge || $item->discount_label)
+              <span class="pp-related-badges">
+                @if($item->badge)<span class="badge badge-featured"><i class="fa-solid fa-fire"></i> {{ $item->badge }}</span>@endif
+                @if($item->discount_label)<span class="badge badge-discount">{{ $item->discount_label }}</span>@endif
+              </span>
+              @endif
+              <img src="{{ $item->image_url }}" alt="{{ $item->name }}" loading="lazy" decoding="async">
+            </span>
+            <span class="pp-related-body">
+              <span class="pp-related-name">{{ $item->name }}</span>
+              <span class="pp-related-prices">
+                <span class="pp-related-price">৳{{ number_format($item->price) }}</span>
+                @if($item->old_price)<span class="price-old">৳{{ number_format($item->old_price) }}</span>@endif
+              </span>
+            </span>
           </a>
           @endforeach
         </div>
@@ -145,6 +164,8 @@
       'currency' => 'BDT',
     ];
   @endphp
+  <script src="{{ asset('js/arm-zoom.js') }}?v={{ filemtime(public_path('js/arm-zoom.js')) }}"></script>
+  <script>if (window.ArmZoom) { ArmZoom.init(document); }</script>
   <script>if (window.ArmTracking) { ArmTracking.track('ViewContent', @json($viewContent)); }</script>
 </body>
 </html>

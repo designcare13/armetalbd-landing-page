@@ -344,4 +344,53 @@ class SeoTest extends TestCase
         $this->assertSame('একটি দুটি তিনটি', Seo::describe("<p>একটি</p>\n  দুটি   তিনটি"));
         $this->assertLessThanOrEqual(60, mb_strlen(Seo::describe(str_repeat('শব্দ ', 100), 50)));
     }
+
+    public function test_the_product_photo_has_the_hover_zoom_frame_and_loads_the_shared_zoom_script(): void
+    {
+        $product = Product::factory()->create(['badge' => 'হট সেলিং']);
+
+        $html = $this->get(route('products.show', $product->slug))->assertOk()->getContent();
+
+        $this->assertStringContainsString('<div class="pv-zoom-frame">', $html);
+        $this->assertStringContainsString('class="pv-zoom-level"', $html);
+        $this->assertStringContainsString('জুম দেখতে ছবির উপর মাউস নিন', $html);
+        $this->assertStringContainsString('জুম করতে ছবিতে ট্যাপ করুন', $html);
+        $this->assertStringContainsString('js/arm-zoom.js', $html);
+        $this->assertStringContainsString('ArmZoom.init(document)', $html);
+        $this->assertFileExists(public_path('js/arm-zoom.js'));
+    }
+
+    public function test_the_landing_page_loads_the_shared_zoom_script_before_its_own(): void
+    {
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('js/arm-zoom.js', $html);
+        $this->assertLessThan(strpos($html, 'js/landing.js'), strpos($html, 'js/arm-zoom.js'), 'the zoom script comes first');
+    }
+
+    public function test_related_products_show_their_badge_discount_and_old_price(): void
+    {
+        $product = Product::factory()->create();
+        $related = Product::factory()->create(['name' => 'অন্য চেয়ার', 'price' => 13200, 'old_price' => 16500, 'badge' => 'জনপ্রিয়']);
+
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertSee('class="pp-related-media"', false)
+            ->assertSee('অন্য চেয়ার')
+            ->assertSee('জনপ্রিয়')
+            ->assertSee($related->discount_label)
+            ->assertSee('৳13,200')
+            ->assertSee('৳16,500');
+    }
+
+    public function test_a_related_product_without_badge_or_discount_has_no_empty_badge_box(): void
+    {
+        $product = Product::factory()->create();
+        Product::factory()->create(['name' => 'সাধারণ চেয়ার', 'badge' => null, 'old_price' => null]);
+
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertSee('সাধারণ চেয়ার')
+            ->assertDontSee('pp-related-badges', false);
+    }
 }

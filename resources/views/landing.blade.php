@@ -499,6 +499,8 @@
     };
   </script>
 
+  <script src="{{ asset('js/arm-zoom.js') }}?v={{ filemtime(public_path('js/arm-zoom.js')) }}"></script>
+
   <!-- JavaScript App Logic -->
   <script src="{{ asset('js/landing.js') }}?v={{ filemtime(public_path('js/landing.js')) }}"></script>
 </body>
