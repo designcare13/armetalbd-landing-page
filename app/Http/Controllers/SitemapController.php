@@ -21,7 +21,9 @@ class SitemapController extends Controller
             'title' => $product->name,
         ]);
 
-        $xml = view('seo.sitemap', [
+        // The XML declaration lives here, not in the Blade view: with PHP's short_open_tag enabled (common on shared
+        // hosting) Blade would read "<?xml" as the start of PHP code and the page would fail.
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n".view('seo.sitemap', [
             'homeUrl' => $base.'/',
             'homeLastModified' => $entries->max('lastModified') ?? now(),
             'entries' => $entries,

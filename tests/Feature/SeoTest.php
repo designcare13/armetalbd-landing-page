@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Support\Seo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -256,14 +257,15 @@ class SeoTest extends TestCase
         $this->assertNotEmpty((string) $xml->xpath('//s:url/s:lastmod')[1]);
     }
 
-    public function test_sitemap_still_works_when_old_products_have_missing_or_broken_timestamps(): void
+    public function test_sitemap_still_works_when_old_products_have_missing_or_placeholder_dates(): void
     {
-        // Products brought in from an old database dump can have no dates, or dates that are not real dates.
+        // Products brought in from an old database dump can have no dates, or a placeholder date from long ago.
+        // (MySQL refuses outright invalid dates, so those cannot exist on the live server.)
         $noDates = Product::factory()->create();
         $brokenDates = Product::factory()->create();
         $normal = Product::factory()->create();
         DB::table('products')->where('id', $noDates->id)->update(['created_at' => null, 'updated_at' => null]);
-        DB::table('products')->where('id', $brokenDates->id)->update(['created_at' => 'not a date', 'updated_at' => '0000-00-00 00:00:00']);
+        DB::table('products')->where('id', $brokenDates->id)->update(['created_at' => '1971-06-15 12:00:00', 'updated_at' => '1971-06-15 12:00:00']);
 
         $response = $this->visit('/sitemap.xml')->assertOk();
 
@@ -275,6 +277,27 @@ class SeoTest extends TestCase
             $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T/', (string) $lastModified);
         }
         $this->assertStringContainsString('/products/'.$normal->slug, $response->getContent());
+    }
+
+    public function test_sitemap_starts_with_the_xml_declaration(): void
+    {
+        $this->visit('/sitemap.xml')->assertOk()->assertSee('<?xml version="1.0" encoding="UTF-8"?>', false);
+
+        $this->assertStringStartsWith('<?xml version="1.0" encoding="UTF-8"?>', $this->visit('/sitemap.xml')->getContent());
+    }
+
+    public function test_no_view_contains_a_literal_xml_style_tag(): void
+    {
+        // With PHP's short_open_tag enabled, Blade reads "<?xml" as PHP code and the page fails with a server error.
+        // That setting is common on live servers but off in development, so it is guarded here.
+        $offenders = collect(File::allFiles(resource_path('views')))
+            ->filter(fn ($file): bool => str_ends_with($file->getFilename(), '.php')
+                && preg_match('/<\?(?!php|=)/', $file->getContents()))
+            ->map(fn ($file): string => $file->getRelativePathname())
+            ->values()
+            ->all();
+
+        $this->assertSame([], $offenders, 'Put XML declarations in a controller, not in a view.');
     }
 
     public function test_robots_txt_hides_admin_pages_and_points_to_the_sitemap(): void
