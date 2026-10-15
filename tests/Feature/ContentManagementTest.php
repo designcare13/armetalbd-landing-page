@@ -144,7 +144,7 @@ class ContentManagementTest extends TestCase
         ]))->assertSessionHasErrors('image');
 
         $this->actingAs($admin)->post('/admin/products', $this->productPayload([
-            'image' => UploadedFile::fake()->image('huge.jpg', 800, 800)->size(3000),
+            'image' => UploadedFile::fake()->image('huge.jpg', 800, 800)->size(11000),
         ]))->assertSessionHasErrors('image');
 
         $this->actingAs($admin)->post('/admin/products', $this->productPayload([

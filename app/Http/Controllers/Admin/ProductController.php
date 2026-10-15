@@ -13,10 +13,19 @@ use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-    /** Smallest accepted side in pixels; below this the popup zoom turns blurry. */
-    public const MIN_IMAGE_SIZE = 800;
+    /** Smallest accepted side in pixels; anything smaller is too tiny to show properly. */
+    public const MIN_IMAGE_SIZE = 300;
 
-    private const IMAGE_RULES = ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:min_width='.self::MIN_IMAGE_SIZE.',min_height='.self::MIN_IMAGE_SIZE.',max_width=5000,max_height=5000'];
+    /** From this side up the popup zoom stays sharp; smaller photos are accepted with a warning. */
+    public const GOOD_IMAGE_SIZE = 800;
+
+    /** Upload limit in KB. Larger photos are scaled down on save, so this can be generous. */
+    public const MAX_UPLOAD_KB = 10240;
+
+    /** Longer side, in pixels, that saved photos are scaled down to. */
+    public const STORED_IMAGE_MAX_SIDE = 1600;
+
+    private const IMAGE_RULES = ['image', 'mimes:jpg,jpeg,png,webp', 'max:'.self::MAX_UPLOAD_KB, 'dimensions:min_width='.self::MIN_IMAGE_SIZE.',min_height='.self::MIN_IMAGE_SIZE.',max_width=5000,max_height=5000'];
 
     public function index(): View
     {
@@ -40,7 +49,7 @@ class ProductController extends Controller
         $validated['is_featured'] = $request->boolean('is_featured');
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['specs'] = $this->parseSpecs($validated['specs'] ?? null);
-        $validated['image'] = $this->storeImage($request->file('image'), 'products');
+        $validated['image'] = $this->storeImage($request->file('image'), 'products', self::STORED_IMAGE_MAX_SIDE);
 
         Product::create($validated);
 
@@ -64,7 +73,7 @@ class ProductController extends Controller
         unset($validated['image']);
 
         if ($request->hasFile('image')) {
-            $validated['image'] = $this->storeImage($request->file('image'), 'products');
+            $validated['image'] = $this->storeImage($request->file('image'), 'products', self::STORED_IMAGE_MAX_SIDE);
             Setting::deleteImage($product->image);
         }
 
@@ -105,8 +114,8 @@ class ProductController extends Controller
             'image.required' => 'প্রোডাক্টের ছবি আপলোড করুন।',
             'image.image' => 'ফাইলটি অবশ্যই একটি ছবি হতে হবে।',
             'image.mimes' => 'ছবি অবশ্যই JPG, PNG বা WEBP ফরম্যাটের হতে হবে।',
-            'image.max' => 'ছবির সাইজ ২ MB এর বেশি হতে পারবে না।',
-            'image.dimensions' => 'ছবির সাইজ কমপক্ষে ৮০০×৮০০ এবং সর্বোচ্চ ৫০০০×৫০০০ পিক্সেল হতে হবে। জুম পরিষ্কার দেখাতে ১০০০×১০০০ বা তার বেশি মাপের ছবি দিন।',
+            'image.max' => 'ছবির সাইজ ১০ MB এর বেশি হতে পারবে না।',
+            'image.dimensions' => 'ছবির সাইজ কমপক্ষে ৩০০×৩০০ এবং সর্বোচ্চ ৫০০০×৫০০০ পিক্সেল হতে হবে।',
             'image.uploaded' => 'ছবি আপলোড হয়নি। ফাইলের সাইজ সার্ভারের লিমিটের চেয়ে বড় হতে পারে।',
         ]);
     }
