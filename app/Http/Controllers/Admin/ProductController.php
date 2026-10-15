@@ -27,9 +27,9 @@ class ProductController extends Controller
 
     private const IMAGE_RULES = ['image', 'mimes:jpg,jpeg,png,webp', 'max:'.self::MAX_UPLOAD_KB, 'dimensions:min_width='.self::MIN_IMAGE_SIZE.',min_height='.self::MIN_IMAGE_SIZE.',max_width=5000,max_height=5000'];
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $products = Product::with('category')->latest()->paginate(15);
+        $products = Product::with('category')->latest()->paginate($this->perPage($request))->withQueryString();
 
         return view('admin.products.index', compact('products'));
     }

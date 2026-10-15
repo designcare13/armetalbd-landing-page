@@ -90,9 +90,7 @@
     </table>
   </div>
 
-  <div style="margin-top: 20px;">
-    {{ $products->links() }}
-  </div>
+  @include('admin._list-footer', ['paginator' => $products])
 </div>
 
 @endsection

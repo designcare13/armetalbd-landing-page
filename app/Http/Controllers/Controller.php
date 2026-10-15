@@ -2,12 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 abstract class Controller
 {
+    /** Row counts an admin can pick for a list; the first is the default. */
+    public const PER_PAGE_OPTIONS = [15, 30, 50, 100];
+
+    /**
+     * Rows per page for an admin list, taken from ?per_page= when it is one of the allowed counts.
+     */
+    protected function perPage(Request $request): int
+    {
+        $requested = (int) $request->query('per_page');
+
+        return in_array($requested, self::PER_PAGE_OPTIONS, true) ? $requested : self::PER_PAGE_OPTIONS[0];
+    }
+
     /**
      * Store an uploaded image on the uploads disk and return its relative path.
      *

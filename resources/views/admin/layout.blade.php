@@ -363,6 +363,21 @@
     .pager-list a:hover { background: #f1f5f9; border-color: var(--primary); color: var(--primary); }
     .pager-list .active span { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 700; }
     .pager-list .disabled span { color: #cbd5e1; background: #f8fafc; }
+    .list-footer {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--gray-light);
+    }
+    .list-footer .pager { margin-top: 0; flex: 1 1 auto; }
+    .per-page { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: #64748b; }
+    .per-page select {
+      height: 38px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 8px;
+      background: #fff; color: #334155; font-family: inherit; font-size: 0.88rem; cursor: pointer;
+    }
+    .per-page select:focus { outline: none; border-color: var(--primary); }
+    @media (max-width: 700px) {
+      .list-footer { flex-direction: column; align-items: stretch; }
+      .per-page { justify-content: center; }
+    }
     /* Delete confirmation popup */
     .confirm-overlay {
       position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);

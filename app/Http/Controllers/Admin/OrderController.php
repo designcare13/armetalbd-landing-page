@@ -27,9 +27,17 @@ class OrderController extends Controller
             });
         }
 
-        $orders = $query->paginate(15)->withQueryString();
+        $orders = $query->paginate($this->perPage($request))->withQueryString();
 
-        return view('admin.orders.index', compact('orders'));
+        $statusCounts = Order::query()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $summary = [
+            'total' => (int) $statusCounts->sum(),
+            'pending' => (int) ($statusCounts['pending'] ?? 0),
+            'today' => Order::whereDate('created_at', today())->count(),
+            'delivered_value' => (float) Order::where('status', 'delivered')->sum('grand_total'),
+        ];
+
+        return view('admin.orders.index', compact('orders', 'statusCounts', 'summary'));
     }
 
     public function show(Order $order)
