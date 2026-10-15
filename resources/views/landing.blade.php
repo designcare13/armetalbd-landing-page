@@ -31,7 +31,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/style.css') }}?v={{ filemtime(public_path('css/style.css')) }}">
 
   <!-- Facebook Meta Pixel Code (Dynamic) -->
   @if(!empty($settings['facebook_pixel_id']))
@@ -541,12 +541,12 @@
   </div>
 
   <!-- Quick View Modal -->
-  <div class="modal-overlay" id="quickViewModal" onclick="if(event.target===this) closeModal('quickViewModal')">
-    <div class="modal-dialog">
-      <button class="modal-close-btn" onclick="closeModal('quickViewModal')">
+  <div class="modal-overlay pv-overlay" id="quickViewModal" onclick="if(event.target===this) closeModal('quickViewModal')">
+    <div class="pv-dialog" role="dialog" aria-modal="true" aria-label="প্রোডাক্টের বিস্তারিত">
+      <button type="button" class="pv-close" onclick="closeModal('quickViewModal')" aria-label="বন্ধ করুন">
         <i class="fa-solid fa-xmark"></i>
       </button>
-      <div id="quickViewContent">
+      <div class="pv-grid" id="quickViewContent">
         <!-- Injected via JavaScript -->
       </div>
     </div>
@@ -613,11 +613,12 @@
         outsideCharge: {{ (int)($settings['delivery_outside'] ?? 300) }},
         csrfToken: '{{ csrf_token() }}',
         orderUrl: '{{ route('landing.order') }}',
+        phone: @json($settings['phone'] ?? '01805962220'),
         pixelId: '{{ $settings['facebook_pixel_id'] ?? '' }}'
     };
   </script>
 
   <!-- JavaScript App Logic -->
-  <script src="{{ asset('js/landing.js') }}"></script>
+  <script src="{{ asset('js/landing.js') }}?v={{ filemtime(public_path('js/landing.js')) }}"></script>
 </body>
 </html>

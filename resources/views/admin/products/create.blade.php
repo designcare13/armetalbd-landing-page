@@ -66,6 +66,12 @@
     </div>
 
     <div class="form-group">
+      <label class="form-label" for="description">বিস্তারিত বিবরণ (পপআপে দেখাবে)</label>
+      <textarea name="description" id="description" rows="6" class="form-control" placeholder="প্রোডাক্টের পূর্ণ বিবরণ লিখুন...">{{ old('description') }}</textarea>
+      <small style="color: #64748b;">ফাঁকা রাখলে পপআপে সংক্ষিপ্ত বিবরণ দেখাবে। লাইন ভেঙে লিখলে পপআপেও সেভাবেই দেখাবে।</small>
+    </div>
+
+    <div class="form-group">
       <label class="form-label" for="specs">প্রোডাক্ট বৈশিষ্ট্যসমূহ (প্রতি লাইনে একটি করে বৈশিষ্ট্য লিখুন)</label>
       <textarea name="specs" id="specs" rows="4" class="form-control" placeholder="উপাদান: এম.এস আইরন স্টিল ও চাইনিজ ফাইবার&#10;ফিনিশিং: রোদে-বৃষ্টিতে নষ্ট না হওয়া হিট পেইন্ট&#10;লোড ক্যাপাসিটি: ১৮০ কেজি পর্যন্ত">{{ old('specs') }}</textarea>
     </div>

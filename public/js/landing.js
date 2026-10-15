@@ -181,15 +181,22 @@ function filterProducts(cat) {
   renderProducts(cat);
 }
 
-// "Buy Now" clicked: add product if not present, and scroll to checkout
-function buyNowProduct(id) {
+// "Buy Now" clicked: add product if not present, and scroll to checkout.
+// The quick view popup passes the chosen quantity; the product cards omit it.
+function buyNowProduct(id, qty = null) {
+  const prod = window.PRODUCTS_DATA.find(p => p.id === id);
   const existing = cart.find(item => item.id === id);
+  const wantedQty = prod && qty !== null
+    ? Math.max(1, Math.min(qty, prod.stock, QUICK_VIEW_MAX_QTY))
+    : 1;
+
   if (!existing) {
-    const prod = window.PRODUCTS_DATA.find(p => p.id === id);
     if (prod && prod.stock > 0) {
-      cart.push({ ...prod, qty: 1 });
+      cart.push({ ...prod, qty: wantedQty });
       trackPixelAddToCart(prod);
     }
+  } else if (qty !== null) {
+    existing.qty = wantedQty;
   }
   updateOrderSummary();
   renderProducts(currentCategory);
@@ -306,7 +313,79 @@ function updateOrderSummary() {
   if (totalEl) totalEl.textContent = formatBDT(grandTotal);
 }
 
-// Quick View Modal
+// ---------- Quick View popup ----------
+const QUICK_VIEW_MAX_QTY = 50; // same per-item limit the order endpoint enforces
+
+function toBanglaDigits(value) {
+  return String(value).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+}
+
+// "- ব্র্যান্ড: AR Metal" becomes a key/value row; lines without a colon stay as a plain note.
+function renderQuickViewSpecs(specs) {
+  const rows = (specs || []).map(s => String(s).replace(/^[\s\-–—•*]+/, '').trim()).filter(Boolean);
+  if (!rows.length) return '';
+
+  const items = rows.map(row => {
+    const colon = row.indexOf(':');
+    return colon > 0
+      ? `<div class="pv-spec-row"><span class="pv-spec-key">${esc(row.slice(0, colon).trim())}</span><span class="pv-spec-val">${esc(row.slice(colon + 1).trim())}</span></div>`
+      : `<div class="pv-spec-note"><i class="fa-solid fa-check"></i>${esc(row)}</div>`;
+  }).join('');
+
+  return `
+    <section class="pv-section">
+      <h3><i class="fa-solid fa-list-check"></i> প্রোডাক্টের বৈশিষ্ট্যসমূহ</h3>
+      <div class="pv-spec-table">${items}</div>
+    </section>`;
+}
+
+// Inner zoom: the part of the photo under the pointer is magnified inside the same frame.
+function setupQuickViewZoom(root) {
+  const frame = root.querySelector('.pv-zoom-frame');
+  const img = root.querySelector('.pv-zoom-frame img');
+  const levelEl = root.querySelector('.pv-zoom-level');
+  if (!frame || !img) return;
+
+  let active = false;
+  let scale = 2;
+  let lastPointerType = 'mouse';
+
+  // Never magnify far beyond the real pixels, otherwise the photo turns blurry.
+  const pickScale = () => {
+    const ratio = img.naturalWidth / Math.max(1, img.clientWidth);
+    scale = Math.min(3, Math.max(1.8, ratio));
+    levelEl.textContent = toBanglaDigits(scale.toFixed(1)) + '× জুম' + (ratio < 1.4 ? ' · ছবির মান কম' : '');
+  };
+
+  const moveOrigin = event => {
+    const rect = frame.getBoundingClientRect();
+    const x = Math.min(100, Math.max(0, (event.clientX - rect.left) / rect.width * 100));
+    const y = Math.min(100, Math.max(0, (event.clientY - rect.top) / rect.height * 100));
+    img.style.transformOrigin = `${x}% ${y}%`;
+  };
+
+  const zoomIn = event => {
+    pickScale();
+    active = true;
+    frame.classList.add('is-zooming');
+    moveOrigin(event);
+    img.style.transform = `scale(${scale})`;
+  };
+
+  const zoomOut = () => {
+    active = false;
+    frame.classList.remove('is-zooming');
+    img.style.transform = '';
+  };
+
+  frame.addEventListener('pointerdown', e => { lastPointerType = e.pointerType; });
+  frame.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') zoomIn(e); });
+  frame.addEventListener('pointermove', e => { if (active) moveOrigin(e); });
+  frame.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') zoomOut(); });
+  // Touch screens have no hover: a tap toggles the zoom and dragging pans it.
+  frame.addEventListener('click', e => { if (lastPointerType !== 'mouse') { active ? zoomOut() : zoomIn(e); } });
+}
+
 function openQuickView(id) {
   const product = window.PRODUCTS_DATA.find(p => p.id === id);
   if (!product) return;
@@ -314,46 +393,134 @@ function openQuickView(id) {
   const content = document.getElementById('quickViewContent');
   if (!content) return;
 
-  content.innerHTML = `
-    <div class="modal-product-grid">
-      <div class="modal-img-wrap">
-        <img src="${product.image}" alt="${esc(product.name)}">
-      </div>
-      <div>
-        <div class="card-stars mb-2">
-          ${'<i class="fa-solid fa-star"></i>'.repeat(Math.floor(product.rating || 5))}
-          <span>(${product.reviews || 20} কাস্টমার রিভিউ)</span>
-        </div>
-        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; line-height: 1.3;">${esc(product.name)}</h2>
-        <div class="card-price-row mb-3" style="margin-bottom: 14px;">
-          <span class="price-current" style="font-size: 1.6rem;">${formatBDT(product.price)}</span>
-          ${product.oldPrice ? `<span class="price-old">${formatBDT(product.oldPrice)}</span>` : ''}
-          ${product.discount ? `<span class="badge badge-discount" style="margin-left:8px;">${esc(product.discount)}</span>` : ''}
-        </div>
-        <p style="color: var(--gray-dark); margin-bottom: 16px; font-size: 0.95rem; line-height: 1.6;">${esc(product.shortDesc)}</p>
-        
-        <h4 style="font-weight: 700; margin-bottom: 8px; font-size: 0.95rem;">প্রোডাক্টের বৈশিষ্ট্যসমূহ:</h4>
-        <ul class="card-specs-list" style="margin-bottom: 20px;">
-          ${(product.specs || []).map(s => `<li><i class="fa-solid fa-check"></i> ${esc(s)}</li>`).join('')}
-        </ul>
+  const inStock = product.stock > 0;
+  const maxQty = Math.max(1, Math.min(product.stock, QUICK_VIEW_MAX_QTY));
+  const inCart = cart.find(item => item.id === id);
+  let qty = Math.min(inCart ? inCart.qty : 1, maxQty);
+  const saving = product.oldPrice && product.oldPrice > product.price ? product.oldPrice - product.price : 0;
+  const description = String(product.description || product.shortDesc || '').trim();
+  const phone = String((window.STORE_CONFIG && window.STORE_CONFIG.phone) || '').replace(/[^\d+]/g, '');
 
-        <div style="display: flex; gap: 12px;">
-          <button class="btn btn-primary" style="flex: 1;" onclick="closeModal('quickViewModal'); buyNowProduct(${product.id});">
-            <i class="fa-solid fa-bolt"></i> এখনই অর্ডার করুন
+  content.innerHTML = `
+    <div class="pv-media">
+      <div class="pv-stage">
+        <div class="pv-zoom-frame">
+          ${product.badge ? `<span class="pv-badge">${esc(product.badge)}</span>` : ''}
+          <img src="${esc(product.image)}" alt="${esc(product.name)}" draggable="false" decoding="async">
+          <span class="pv-zoom-level"></span>
+          <span class="pv-zoom-hint"><i class="fa-solid fa-magnifying-glass-plus"></i>
+            <span class="pv-hint-mouse">জুম দেখতে ছবির উপর মাউস নিন</span><span class="pv-hint-touch">জুম করতে ছবিতে ট্যাপ করুন</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pv-info">
+      <div class="pv-scroll">
+        <div class="pv-top">
+          <div class="card-stars">
+            ${'<i class="fa-solid fa-star"></i>'.repeat(Math.floor(product.rating || 5))}
+            <span>(${product.reviews || 20} কাস্টমার রিভিউ)</span>
+          </div>
+          <span class="pv-stock ${inStock ? 'in' : 'out'}"><i class="fa-solid ${inStock ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>${inStock ? 'স্টকে আছে' : 'স্টক শেষ'}</span>
+        </div>
+
+        <h2 class="pv-title">${esc(product.name)}</h2>
+        <div class="pv-price-row">
+          <span class="price-current">${formatBDT(product.price)}</span>
+          ${product.oldPrice ? `<span class="price-old">${formatBDT(product.oldPrice)}</span>` : ''}
+          ${product.discount ? `<span class="badge badge-discount">${esc(product.discount)}</span>` : ''}
+        </div>
+        ${saving ? `<div class="pv-saving"><i class="fa-solid fa-tag"></i> আপনার সাশ্রয়: ${formatBDT(saving)}</div>` : ''}
+
+        <div class="pv-trust">
+          <div class="pv-trust-item"><i class="fa-solid fa-hand-holding-dollar"></i>পণ্য হাতে পেয়ে টাকা দিন (ক্যাশ অন ডেলিভারি)</div>
+          <div class="pv-trust-item"><i class="fa-solid fa-truck-fast"></i>ঢাকায় ও সারা দেশে ডেলিভারি</div>
+          <div class="pv-trust-item"><i class="fa-solid fa-industry"></i>সরাসরি নিজস্ব কারখানা থেকে</div>
+        </div>
+
+        ${description ? `
+          <section class="pv-section">
+            <h3><i class="fa-solid fa-align-left"></i> প্রোডাক্টের বিবরণ</h3>
+            <div class="pv-desc clamped">${esc(description)}</div>
+            <button type="button" class="pv-desc-more">আরও দেখুন <i class="fa-solid fa-chevron-down"></i></button>
+          </section>` : ''}
+
+        ${renderQuickViewSpecs(product.specs)}
+      </div>
+
+      <div class="pv-footer">
+        <div class="pv-total"><span class="pv-qty-text"></span><span>মোট: <b class="pv-total-price"></b></span></div>
+        <div class="pv-actions">
+          <div class="pv-qty">
+            <button type="button" class="pv-qty-minus" aria-label="পরিমাণ কমান">−</button>
+            <output class="pv-qty-value" aria-live="polite"></output>
+            <button type="button" class="pv-qty-plus" aria-label="পরিমাণ বাড়ান">+</button>
+          </div>
+          <button type="button" class="btn btn-primary pv-order-btn" ${inStock ? '' : 'disabled'}>
+            <i class="fa-solid fa-bolt"></i> ${inStock ? 'এখনই অর্ডার করুন' : 'স্টক শেষ'}
           </button>
+          ${phone ? `<a class="btn pv-call" href="tel:${esc(phone)}" aria-label="কল করুন"><i class="fa-solid fa-phone"></i></a>` : ''}
         </div>
       </div>
     </div>
   `;
 
+  const qtyValue = content.querySelector('.pv-qty-value');
+  const minusBtn = content.querySelector('.pv-qty-minus');
+  const plusBtn = content.querySelector('.pv-qty-plus');
+  const refreshQuantity = () => {
+    qtyValue.textContent = qty;
+    content.querySelector('.pv-qty-text').textContent = `${qty} টি, ডেলিভারি চার্জ আলাদা`;
+    content.querySelector('.pv-total-price').textContent = formatBDT(product.price * qty);
+    minusBtn.disabled = qty <= 1;
+    plusBtn.disabled = qty >= maxQty;
+  };
+
+  minusBtn.addEventListener('click', () => { qty = Math.max(1, qty - 1); refreshQuantity(); });
+  plusBtn.addEventListener('click', () => { qty = Math.min(maxQty, qty + 1); refreshQuantity(); });
+  content.querySelector('.pv-order-btn').addEventListener('click', () => {
+    closeModal('quickViewModal');
+    buyNowProduct(product.id, qty);
+  });
+
+  const moreBtn = content.querySelector('.pv-desc-more');
+  if (moreBtn) {
+    const descEl = content.querySelector('.pv-desc');
+    moreBtn.addEventListener('click', () => {
+      const collapsed = descEl.classList.toggle('clamped');
+      moreBtn.innerHTML = collapsed
+        ? 'আরও দেখুন <i class="fa-solid fa-chevron-down"></i>'
+        : 'কম দেখুন <i class="fa-solid fa-chevron-up"></i>';
+    });
+  }
+
+  refreshQuantity();
+  setupQuickViewZoom(content);
+
+  const scrollArea = content.querySelector('.pv-scroll');
+  if (scrollArea) scrollArea.scrollTop = 0;
+
   document.getElementById('quickViewModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Offer "আরও দেখুন" only when the description really is cut off (needs the popup to be visible to measure).
+  const descEl = content.querySelector('.pv-desc');
+  if (moreBtn && descEl && descEl.scrollHeight <= descEl.clientHeight + 1) {
+    descEl.classList.remove('clamped');
+    moreBtn.remove();
+  }
 }
 
 function closeModal(id) {
   const modal = document.getElementById(id);
   if (modal) modal.classList.remove('open');
+  if (id === 'quickViewModal') document.body.style.overflow = '';
 }
 
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeModal('quickViewModal');
+});
 // FAQ Accordion
 function initFaqAccordion() {
   document.querySelectorAll('.faq-header').forEach(header => {

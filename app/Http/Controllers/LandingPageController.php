@@ -39,6 +39,7 @@ class LandingPageController extends Controller
                 'reviews' => (int) $p->reviews_count,
                 'badge' => $p->badge,
                 'shortDesc' => $p->short_description,
+                'description' => $p->description,
                 'specs' => $p->specs ?? [],
                 'stock' => (int) $p->stock,
             ];

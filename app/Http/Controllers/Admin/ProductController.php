@@ -92,6 +92,7 @@ class ProductController extends Controller
             'image' => [$imageRequired ? 'required' : 'nullable', ...self::IMAGE_RULES],
             'badge' => 'nullable|string|max:50',
             'short_description' => 'nullable|string|max:1000',
+            'description' => 'nullable|string|max:5000',
             'specs' => 'nullable|string|max:3000',
             'stock' => 'required|integer|min:0|max:1000000',
             'rating' => 'required|numeric|min:0|max:5',
