@@ -171,11 +171,6 @@ function renderProducts(filter = 'all') {
           </div>
 
           <h3 class="card-title"><a href="${esc(product.url)}">${esc(product.name)}</a></h3>
-          <p class="card-desc">${esc(product.shortDesc)}</p>
-
-          <ul class="card-specs-list">
-            ${(product.specs || []).slice(0, 2).map(s => `<li><i class="fa-solid fa-circle-check"></i> ${esc(s)}</li>`).join('')}
-          </ul>
 
           <div class="card-price-row">
             <span class="price-current">${formatBDT(product.price)}</span>
